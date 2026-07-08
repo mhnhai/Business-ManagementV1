@@ -1,0 +1,267 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model RefreshToken {
+  token_id   Int      @id @default(autoincrement())
+  token      String   @unique
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  @@index([user_id])
+  @@map("refresh_tokens")
+}
+
+model User {
+  user_id         Int       @id @default(autoincrement())
+  username   String    @unique
+  password   String
+  role       String    @default("user")
+  
+  full_name          String
+  department    String
+  phone_number  String
+  email         String    @unique
+
+  is_activated   Boolean
+  
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+  bank_account        BankAccount?
+
+  refresh_tokens      RefreshToken[]
+  salaries            Salary[]
+  activities          Activity[]
+  employee_locations  EmployeeLocation[]
+
+  @@map("users")
+}
+
+model BankAccount {
+  bank_account_id Int      @id @default(autoincrement())
+  user_id         Int      @unique 
+  bank_name       String   @db.VarChar(100)
+  account_number  String   @db.VarChar(50)  
+  
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("bank_accounts")
+}
+
+model Salary {
+  salary_id              Int      @id @default(autoincrement())
+  user_id         Int
+  month           Int  
+  year            Int   
+  base_salary     Decimal  @db.Decimal(15, 2)
+  commission      Decimal  @db.Decimal(15, 2)
+  bonus           Decimal  @db.Decimal(15, 2)
+  is_paid         Boolean  @default(false)
+  
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("salaries")
+}
+
+model Product {
+  product_id      Int              @id @default(autoincrement())
+  product_name    String           @db.VarChar(50)
+  unit_price      Decimal          @db.Decimal(15, 2)
+  stock_quantity  Int
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+  activityDetails ActivityDetail[]
+  importDetails   ImportDetail[]
+
+  @@map("products")
+}
+
+model Location {
+  location_id Int        @id @default(autoincrement())
+  province    String     @db.VarChar(50)
+  ward        String     @db.VarChar(50)
+  ward_code   Int        @unique
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+  customers          Customer[]
+  employee_location  EmployeeLocation?
+
+  @@unique([province, ward])
+  @@map("locations")
+}
+
+model EmployeeLocation {
+  user_id     Int
+  location_id Int      @unique
+  created_at  DateTime @default(now())
+
+  user     User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Cascade)
+  location Location @relation(fields: [location_id], references: [location_id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([user_id, location_id])
+  @@index([user_id])
+  @@map("employee_locations")
+}
+
+model Customer {
+  customer_id         Int        @id @default(autoincrement())
+  location_id         Int
+  company_name        String     @db.VarChar(50)
+  business_type       String     @db.VarChar(50)
+  representative_name String     @db.VarChar(50)
+  position            String     @db.VarChar(50)
+  phone_number        String     @db.VarChar(10)
+  current_balance     Decimal    @default(0) @db.Decimal(15, 2)
+  
+  lat                 Float?     
+  lng                 Float?     
+  is_approved         Boolean    @default(false) 
+  approved_at         DateTime?
+  
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
+  
+  location            Location   @relation(fields: [location_id], references: [location_id], onDelete: Restrict, onUpdate: Cascade)
+  activities          Activity[]
+
+  @@index([lat, lng])  
+  @@map("customers")
+}
+
+/// Thanh toán đơn hàng (ERD: unpaid | partial | paid trên Activity)
+enum PaymentStatus {
+  unpaid
+  partial
+  paid
+}
+
+model Invoice {
+  invoice_id   Int       @id @default(autoincrement())
+  total_amount Decimal   @db.Decimal(15, 2)
+  date         DateTime
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  activity     Activity?
+
+  @@map("invoices")
+}
+
+model OrderStatus {
+  status_code String @id @db.VarChar(50)
+  status_name String @db.VarChar(100)
+  sort_order  Int    @unique
+  is_terminal Boolean @default(false)
+
+  @@map("order_statuses")
+}
+
+model Activity {
+  activity_id    Int              @id @default(autoincrement())
+  user_id        Int
+  customer_id    Int
+  invoice_id     Int?             @unique
+  status         String           @db.VarChar(50)
+  activity_date  DateTime
+  delivery_date  DateTime?
+  content        String           @db.VarChar(50)
+  payment_status PaymentStatus    @default(unpaid)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+  user           User             @relation(fields: [user_id], references: [user_id], onDelete: Restrict, onUpdate: Cascade)
+  customer       Customer         @relation(fields: [customer_id], references: [customer_id], onDelete: Restrict, onUpdate: Cascade)
+  invoice        Invoice?         @relation(fields: [invoice_id], references: [invoice_id], onDelete: SetNull, onUpdate: Cascade)
+  details        ActivityDetail[]
+  payments       Payment[]
+
+  @@index([user_id])
+  @@index([customer_id])
+  @@map("activities")
+}
+
+model Payment {
+  payment_id   Int      @id @default(autoincrement())
+  activity_id  Int
+  paid_amount  Decimal  @db.Decimal(15, 2)
+  payment_date DateTime
+  method       String   @db.VarChar(30)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  activity     Activity @relation(fields: [activity_id], references: [activity_id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([activity_id])
+  @@map("payments")
+}
+
+model ActivityDetail {
+  activity_id Int
+  product_id  Int
+  quantity    Int
+  sale_price  Decimal  @db.Decimal(15, 2)
+  activity    Activity @relation(fields: [activity_id], references: [activity_id], onDelete: Cascade, onUpdate: Cascade)
+  product     Product  @relation(fields: [product_id], references: [product_id], onDelete: Restrict, onUpdate: Cascade)
+
+
+  @@index([activity_id])
+  @@id([activity_id, product_id])
+  @@map("activity_details")
+}
+
+model Supplier {
+  supplier_id   Int      @id @default(autoincrement())
+  supplier_name String   @db.VarChar(50)
+  business_type String   @db.VarChar(50)
+  address       String   @db.VarChar(50)
+  phone_number  String   @db.VarChar(10)
+  email         String   @db.VarChar(50)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  imports       Import[]
+
+  @@map("suppliers")
+}
+
+model Import {
+  import_id   Int            @id @default(autoincrement())
+  supplier_id Int
+  import_date DateTime
+  content     String         @db.VarChar(50)
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+  supplier    Supplier       @relation(fields: [supplier_id], references: [supplier_id], onDelete: Restrict, onUpdate: Cascade)
+  details     ImportDetail[]
+
+  @@index([supplier_id])
+  @@map("imports")
+}
+
+model ImportDetail {
+  import_id    Int
+  product_id   Int
+  quantity     Int
+  import_price Decimal @db.Decimal(15, 2)
+  import       Import  @relation(fields: [import_id], references: [import_id], onDelete: Cascade, onUpdate: Cascade)
+  product      Product @relation(fields: [product_id], references: [product_id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([import_id, product_id])
+  @@index([import_id])
+  @@map("import_details")
+}

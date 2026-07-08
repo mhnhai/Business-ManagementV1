@@ -1,0 +1,72 @@
+[
+  {
+    "product_name": "Bia Saigon Lager Lon (Thùng 24)",
+    "unit_price": 260000,
+    "stock_quantity": 150
+  },
+  {
+    "product_name": "Bia Saigon Lager Két (20 chai)",
+    "unit_price": 195000,
+    "stock_quantity": 80
+  },
+  {
+    "product_name": "Bia Tiger Nâu Lon Thấp (Thùng 24)",
+    "unit_price": 350000,
+    "stock_quantity": 200
+  },
+  {
+    "product_name": "Bia Tiger Nâu Lon Cao (Thùng 24)",
+    "unit_price": 375000,
+    "stock_quantity": 120
+  },
+  {
+    "product_name": "Bia Tiger Nâu Két (20 chai)",
+    "unit_price": 270000,
+    "stock_quantity": 60
+  },
+  {
+    "product_name": "Bia Tiger Bạc Lon Thấp (Thùng 24)",
+    "unit_price": 390000,
+    "stock_quantity": 180
+  },
+  {
+    "product_name": "Bia Tiger Bạc Lon Cao (Thùng 24)",
+    "unit_price": 415000,
+    "stock_quantity": 110
+  },
+  {
+    "product_name": "Bia Saigon Export Lon (Thùng 24)",
+    "unit_price": 275000,
+    "stock_quantity": 95
+  },
+  {
+    "product_name": "Bia Saigon Special Lon (Thùng 24)",
+    "unit_price": 325000,
+    "stock_quantity": 140
+  },
+  {
+    "product_name": "Bia Saigon Special Két (20 chai)",
+    "unit_price": 250000,
+    "stock_quantity": 50
+  },
+  {
+    "product_name": "Bia Saigon Chill Lon (Thùng 24)",
+    "unit_price": 370000,
+    "stock_quantity": 100
+  },
+  {
+    "product_name": "Bia Larue Xanh Lon (Thùng 24)",
+    "unit_price": 240000,
+    "stock_quantity": 160
+  },
+  {
+    "product_name": "Bia Larue Két (20 chai)",
+    "unit_price": 175000,
+    "stock_quantity": 70
+  },
+  {
+    "product_name": "Bia Larue Bạc Lon (Thùng 24)",
+    "unit_price": 270000,
+    "stock_quantity": 130
+  }
+]

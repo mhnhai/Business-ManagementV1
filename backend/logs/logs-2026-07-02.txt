@@ -1,0 +1,94 @@
+[2026-07-02 15:13:20] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:13:20] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:13:21] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:13:21] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:13:33] [INFO] [SYSTEM] Tài khoản "nhanvien01" (ID: 44) đăng nhập thành công.
+[2026-07-02 15:13:33] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:13:33] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:13:33] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:13:33] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:13:43] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 6/2026.
+[2026-07-02 15:14:08] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:14:08] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:14:08] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:14:08] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:30:12] [INFO] [SYSTEM] Tài khoản "admin" (ID: 43) đăng nhập thành công.
+[2026-07-02 15:30:12] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:30:12] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:30:12] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:30:12] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:30:23] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:30:23] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:30:23] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:30:23] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:30:52] [INFO] [SYSTEM] Tài khoản "nhanvien01" (ID: 44) đăng nhập thành công.
+[2026-07-02 15:30:52] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:30:52] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:30:52] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:30:52] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:31:14] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:31:14] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:31:14] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:31:14] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:31:20] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:31:20] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:31:20] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:31:20] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:31:25] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:31:25] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:31:25] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:31:25] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:31:35] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-07-02.
+[2026-07-02 15:31:43] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-07-02.
+[2026-07-02 15:31:47] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-06-02.
+[2026-07-02 15:31:49] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-06-25.
+[2026-07-02 15:32:01] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-05-25.
+[2026-07-02 15:32:03] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-04-25.
+[2026-07-02 15:32:17] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-04-25.
+[2026-07-02 15:32:23] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-04-25.
+[2026-07-02 15:34:07] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-04-25.
+[2026-07-02 15:34:56] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:34:56] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:34:56] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:34:56] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:34:57] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-07-02.
+[2026-07-02 15:35:26] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:35:26] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:35:26] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:35:26] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:35:27] [INFO] [SYSTEM] Đang kết nối API bóc tách dữ liệu và kiểm tra bám chốt địa bàn cho ngày lịch trình: 2026-07-02.
+[2026-07-02 15:35:56] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:35:56] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:35:56] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:35:56] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:37:38] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:37:38] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:37:38] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:37:38] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:40:19] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:40:42] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/all.
+[2026-07-02 15:40:46] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/all.
+[2026-07-02 15:40:50] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/all.
+[2026-07-02 15:40:52] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/all.
+[2026-07-02 15:41:00] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/all.
+[2026-07-02 15:41:03] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/all.
+[2026-07-02 15:43:18] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:43:18] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:43:19] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:43:19] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:46:16] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:46:16] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:46:16] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:46:16] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:46:23] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:46:23] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:46:23] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:46:23] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:46:25] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:46:25] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:46:25] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:46:25] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:51:09] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:51:09] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-07-02 15:51:09] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.
+[2026-07-02 15:51:10] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 7/2026.

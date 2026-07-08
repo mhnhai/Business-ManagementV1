@@ -1,0 +1,10 @@
+**/node_modules
+dist/
+**/**/*.log
+tsconfig.tsbuildinfo
+
+/generated/prisma
+
+.env
+.env.*
+/config/.env.*

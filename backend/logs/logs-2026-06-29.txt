@@ -1,0 +1,14 @@
+[2026-06-29 00:21:05] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-06-29 00:21:05] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 6/2026.
+[2026-06-29 00:21:05] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-06-29 00:21:06] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 6/2026.
+[2026-06-29 16:00:54] [INFO] [SYSTEM] Tài khoản "admin" (ID: 4) đăng nhập thành công.
+[2026-06-29 16:00:55] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-06-29 16:00:55] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 6/2026.
+[2026-06-29 16:00:55] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 6/2026.
+[2026-06-29 16:00:56] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-06-29 16:01:24] [INFO] [SYSTEM] Cập nhật/Cài đặt thành công tài khoản ngân hàng cho User ID: 4.
+[2026-06-29 22:28:02] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-06-29 22:28:02] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 6/2026.
+[2026-06-29 22:28:02] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng all/2026.
+[2026-06-29 22:28:02] [INFO] [SYSTEM] Truy xuất thống kê phân bổ doanh thu địa bàn (Tỉnh: all, Xã/Phường: all) vào tháng 6/2026.
