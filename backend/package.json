@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "0.0.0",
   "scripts": {
-    "build": "shx rm -rf dist && esbuild src/main.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@prisma/client --external:prisma --external:express",
+    "build": "node -e \"require('fs').rmSync('dist',{ recursive:true, force:true })\" && esbuild src/main.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@prisma/client --external:prisma --external:express",
     "vercel-build": "prisma generate && npm run build",
     "migrate": "prisma migrate deploy",
     "seed": "prisma db seed",
@@ -22,7 +22,7 @@
     "type-check": "tsc -b --noEmit"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": "20.x"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
