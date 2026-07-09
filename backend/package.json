@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "build": "node -e \"require('fs').rmSync('dist',{ recursive:true, force:true })\" && esbuild src/main.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@prisma/client --external:prisma --external:express",
+    "render:build": "prisma migrate deploy && npm run build",
     "vercel-build": "prisma generate && npm run build",
     "migrate": "prisma migrate deploy",
     "seed": "prisma db seed",
