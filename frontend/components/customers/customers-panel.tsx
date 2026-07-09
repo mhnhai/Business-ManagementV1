@@ -41,7 +41,7 @@ const emptyForm = {
   representativeName: "",
   position: "",
   phoneNumber: "",
-  currentBalance: "",
+  currentBalance: "0",
   lat: "",
   lng: "",
   isApproved: true,
@@ -226,6 +226,7 @@ export function CustomersPanel() {
     setForm({
       ...emptyForm,
       locationId: locations[0] ? String(locations[0].id) : "",
+      currentBalance: "0",
     });
     setDialogOpen(true);
   }
@@ -288,7 +289,7 @@ export function CustomersPanel() {
         representativeName: form.representativeName,
         position: form.position.trim() ? form.position.trim() : null,
         phoneNumber: form.phoneNumber.trim() ? form.phoneNumber.trim() : null,
-        currentBalance: Number(form.currentBalance),
+        currentBalance: Number(form.currentBalance) || 0,
         lat: form.lat ? Number(form.lat) : null,
         lng: form.lng ? Number(form.lng) : null,
         isApproved: isAdmin ? form.isApproved : false,
@@ -646,6 +647,8 @@ export function CustomersPanel() {
                 <Input
                   id="currentBalance"
                   type="number"
+                  min={0}
+                  step={1}
                   required
                   value={form.currentBalance}
                   onChange={(e) =>
