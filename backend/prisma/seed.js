@@ -1,10 +1,12 @@
-require("dotenv").config({ path: "./config/.env.development" });
+if (!process.env.DATABASE_URL) {
+  require("dotenv").config({ path: "./config/.env.development" });
+}
 const bcrypt = require("bcryptjs");
 const fs = require("fs");
 const path = require("path");
-const { Pool } = require("pg");
 const { PrismaPg } = require("@prisma/adapter-pg");
 const { PrismaClient } = require("@prisma/client");
+const { createPgPool } = require("./pg-pool");
 
 const SEED_PASSWORD = "123456";
 const hashPassword = () => bcrypt.hash(SEED_PASSWORD, 12);
@@ -13,7 +15,7 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is missing for seed script");
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = createPgPool(process.env.DATABASE_URL);
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
