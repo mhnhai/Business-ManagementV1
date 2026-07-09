@@ -1,16 +1,18 @@
-import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PUBLIC_AUTH_PREFIXES = ["/auth/verify-email", "/auth/reset-password"];
 
-export async function middleware(request: NextRequest) {
+function hasSessionCookie(request: NextRequest): boolean {
+  return (
+    request.cookies.has("__Secure-authjs.session-token") ||
+    request.cookies.has("authjs.session-token")
+  );
+}
+
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
-  const isLoggedIn = !!token;
+  const isLoggedIn = hasSessionCookie(request);
   const isAuthPage = pathname === "/auth" || pathname.startsWith("/auth/");
   const isPublicAuthPage = PUBLIC_AUTH_PREFIXES.some((prefix) =>
     pathname.startsWith(prefix),
