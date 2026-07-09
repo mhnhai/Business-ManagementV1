@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ActivitiesPanel } from "@/components/activities/activities-panel";
@@ -53,8 +54,15 @@ function defaultSection(role: string | undefined): AppSection {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const { user, isLoading } = useAuth();
   const [activeSection, setActiveSection] = useState<AppSection>("activities");
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/auth");
+    }
+  }, [isLoading, user, router]);
 
   useEffect(() => {
     if (!user) return;

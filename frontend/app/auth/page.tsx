@@ -1,12 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import { LoginForm } from "@/components/auth/login-form";
 import { SignUpForm } from "@/components/auth/signup-form";
-import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 
 export default function AuthPage() {
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/");
+    }
+  }, [isLoading, user, router]);
+
+  if (isLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-muted/20 px-4">
