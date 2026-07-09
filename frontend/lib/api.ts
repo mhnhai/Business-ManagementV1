@@ -38,9 +38,17 @@ import type {
   IBankAccountCreate,
   IBankAccountUpdate,
 } from "@/lib/types";
+import { getAuthTokens, setAuthTokens } from "@/lib/auth-tokens";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "https://business-management-lyart.vercel.app/api";
+
+export type PagedResult<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
 
 let isRefreshing = false;
 let refreshPromise: Promise<void> | null = null;
@@ -59,10 +67,45 @@ function shouldAttemptTokenRefresh(path: string, status: number): boolean {
   return !AUTH_PATHS_SKIP_TOKEN_REFRESH.some((p) => path.includes(p));
 }
 
-function redirectToLoginIfNeeded() {
-  if (typeof window === "undefined") return;
-  if (window.location.pathname.startsWith("/auth")) return;
-  window.location.href = "/auth";
+async function resolveAuthTokens(): Promise<{
+  accessToken: string | null;
+  refreshToken: string | null;
+}> {
+  const cached = getAuthTokens();
+  if (cached.accessToken) {
+    return cached;
+  }
+
+  if (typeof window !== "undefined") {
+    const { getSession } = await import("next-auth/react");
+    const session = await getSession();
+    if (session?.accessToken) {
+      setAuthTokens(session.accessToken, session.refreshToken ?? null);
+      return {
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken ?? null,
+      };
+    }
+  }
+
+  return cached;
+}
+
+async function handleAuthFailure(): Promise<never> {
+  if (typeof window !== "undefined") {
+    const { signOut } = await import("next-auth/react");
+    await signOut({ callbackUrl: "/auth" });
+  }
+  throw new Error("Session expired");
+}
+
+async function buildRequestHeaders(extra?: HeadersInit): Promise<HeadersInit> {
+  const { accessToken } = await resolveAuthTokens();
+  return {
+    "Content-Type": "application/json",
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    ...extra,
+  };
 }
 
 async function request<T>(
@@ -70,13 +113,13 @@ async function request<T>(
   options?: RequestInit,
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const headers = await buildRequestHeaders(
+    options?.headers as HeadersInit | undefined,
+  );
   const defaultOptions: RequestInit = {
     ...options,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
   };
 
   let res = await fetch(url, defaultOptions);
@@ -86,15 +129,23 @@ async function request<T>(
       isRefreshing = true;
       refreshPromise = (async () => {
         try {
+          const { refreshToken } = await resolveAuthTokens();
+          if (!refreshToken) {
+            throw new Error("No refresh token");
+          }
+
           const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
             method: "POST",
-            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken }),
           });
 
           if (!refreshRes.ok) throw new Error("Refresh token expired");
-        } catch (error) {
-          redirectToLoginIfNeeded();
-          throw error;
+
+          const data = (await refreshRes.json()) as { accessToken: string };
+          setAuthTokens(data.accessToken, refreshToken);
+        } catch {
+          await handleAuthFailure();
         } finally {
           isRefreshing = false;
           refreshPromise = null;
@@ -103,7 +154,12 @@ async function request<T>(
     }
     await refreshPromise;
 
-    res = await fetch(url, defaultOptions);
+    res = await fetch(url, {
+      ...defaultOptions,
+      headers: await buildRequestHeaders(
+        options?.headers as HeadersInit | undefined,
+      ),
+    });
   }
 
   if (!res.ok) {
@@ -125,7 +181,8 @@ async function request<T>(
 
 async function downloadBlob(path: string, filename: string): Promise<void> {
   const url = `${API_BASE}${path}`;
-  const options: RequestInit = { credentials: "include" };
+  const headers = await buildRequestHeaders();
+  const options: RequestInit = { credentials: "include", headers };
 
   let res = await fetch(url, options);
 
@@ -134,14 +191,22 @@ async function downloadBlob(path: string, filename: string): Promise<void> {
       isRefreshing = true;
       refreshPromise = (async () => {
         try {
+          const { refreshToken } = await resolveAuthTokens();
+          if (!refreshToken) {
+            throw new Error("No refresh token");
+          }
+
           const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
             method: "POST",
-            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken }),
           });
           if (!refreshRes.ok) throw new Error("Refresh token expired");
-        } catch (error) {
-          redirectToLoginIfNeeded();
-          throw error;
+
+          const data = (await refreshRes.json()) as { accessToken: string };
+          setAuthTokens(data.accessToken, refreshToken);
+        } catch {
+          await handleAuthFailure();
         } finally {
           isRefreshing = false;
           refreshPromise = null;
@@ -149,7 +214,10 @@ async function downloadBlob(path: string, filename: string): Promise<void> {
       })();
     }
     await refreshPromise;
-    res = await fetch(url, options);
+    res = await fetch(url, {
+      credentials: "include",
+      headers: await buildRequestHeaders(),
+    });
   }
 
   if (!res.ok) {
@@ -182,6 +250,19 @@ export const activitiesApi = {
     request<{ activities: Activity[] }>("/activities/all").then(
       (d) => d.activities,
     ),
+  getPage: (
+    page: number,
+    pageSize = 10,
+    filters?: { search?: string; status?: string; debt?: string; fromDate?: string; toDate?: string },
+  ) =>
+    request<{ activities: Activity[]; total: number; page: number; pageSize: number }>(
+      `/activities/all${buildQuery(page, pageSize, filters)}`,
+    ).then((d) => ({
+      items: d.activities,
+      total: d.total,
+      page: d.page,
+      pageSize: d.pageSize,
+    }) as PagedResult<Activity>),
   getOne: (id: number) =>
     request<{ activity: Activity }>(`/activities/${id}`).then((d) => d.activity),
   add: (activity: ActivityWrite) =>
@@ -306,6 +387,15 @@ export const invoicesApi = {
 export const productsApi = {
   getAll: () =>
     request<{ products: Product[] }>("/products/all").then((d) => d.products),
+  getPage: (page: number, pageSize = 10, filters?: { search?: string }) =>
+    request<{ products: Product[]; total: number; page: number; pageSize: number }>(
+      `/products/all${buildQuery(page, pageSize, filters)}`,
+    ).then((d) => ({
+      items: d.products,
+      total: d.total,
+      page: d.page,
+      pageSize: d.pageSize,
+    }) as PagedResult<Product>),
   getOne: (id: number) =>
     request<{ product: Product }>(`/products/${id}`).then((d) => d.product),
   add: (product: Omit<Product, "id">) =>
@@ -327,6 +417,15 @@ export const customersApi = {
     request<{ customers: Customer[] }>("/customers/all").then(
       (d) => d.customers,
     ),
+  getPage: (page: number, pageSize = 10, filters?: { search?: string }) =>
+    request<{ customers: Customer[]; total: number; page: number; pageSize: number }>(
+      `/customers/all${buildQuery(page, pageSize, filters)}`,
+    ).then((d) => ({
+      items: d.customers,
+      total: d.total,
+      page: d.page,
+      pageSize: d.pageSize,
+    }) as PagedResult<Customer>),
   getOne: (id: number) =>
     request<{ customer: Customer }>(`/customers/${id}`).then((d) => d.customer),
   getAccount: (id: number) =>
@@ -370,7 +469,12 @@ export const authApi = {
       body: JSON.stringify(data),
     }),
   login: (data: Pick<User, "username" | "password">) =>
-    request<{ message: string }>("/auth/login", {
+    request<{
+      message: string;
+      user: { userId: number; username: string; role: string };
+      accessToken: string;
+      refreshToken: string;
+    }>("/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -388,13 +492,19 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  refresh: () =>
-    request<{ message: string }>("/auth/refresh", {
-      method: "GET",
+  refresh: (refreshToken: string) =>
+    request<{
+      message: string;
+      accessToken: string;
+      user: { userId: number; username: string; role: string };
+    }>("/auth/refresh", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
     }),
-  logout: () =>
+  logout: (refreshToken?: string) =>
     request<void>("/auth/logout", {
-      method: "GET",
+      method: "POST",
+      body: JSON.stringify(refreshToken ? { refreshToken } : {}),
     }),
   check: () =>
     request<{
@@ -410,6 +520,20 @@ export const salariesApi = {
     request<{ salaries: SalaryWithUser[] }>("/salaries/all", {
       method: "GET",
     }),  
+  getPage: (
+    page: number,
+    pageSize = 10,
+    filters?: { month?: number | string; year?: number | string },
+  ) =>
+    request<{ salaries: SalaryWithUser[]; total: number; page: number; pageSize: number }>(
+      `/salaries/all${buildQuery(page, pageSize, filters)}`,
+      { method: "GET" },
+    ).then((d) => ({
+      items: d.salaries,
+      total: d.total,
+      page: d.page,
+      pageSize: d.pageSize,
+    }) as PagedResult<SalaryWithUser>),
   getByUserId: (userId: number) =>
     request<{ salaries: Salary[] }>(`/salaries/user/${userId}`, {
       method: "GET",
@@ -494,6 +618,24 @@ function buildStatsQueryString(options?: StatsPeriodOptions) {
   return query ? `?${query}` : "";
 }
 
+function buildQuery(
+  page: number,
+  pageSize: number,
+  filters?: Record<string, string | number | boolean | undefined>,
+) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== "") {
+        params.set(key, String(value));
+      }
+    });
+  }
+  return `?${params.toString()}`;
+}
+
 function statsRequest<T>(path: string) {
   return request<T>(path, { cache: "no-store" });
 }
@@ -501,6 +643,15 @@ function statsRequest<T>(path: string) {
 export const usersApi = {
   getAll: () =>
     request<{ users: UserPublic[] }>("/users/all").then((d) => d.users),
+  getPage: (page: number, pageSize = 10, filters?: { search?: string }) =>
+    request<{ users: UserPublic[]; total: number; page: number; pageSize: number }>(
+      `/users/all${buildQuery(page, pageSize, filters)}`,
+    ).then((d) => ({
+      items: d.users,
+      total: d.total,
+      page: d.page,
+      pageSize: d.pageSize,
+    }) as PagedResult<UserPublic>),
   getAllUnactivated: () =>
     request<{ users: UserPublic[] }>("/users/unactivated").then((d) => d.users),
   search: (query: string) =>
@@ -621,6 +772,15 @@ export const suppliersApi = {
     request<{ suppliers: Supplier[] }>("/suppliers/all").then(
       (d) => d.suppliers,
     ),
+  getPage: (page: number, pageSize = 10, filters?: { search?: string }) =>
+    request<{ suppliers: Supplier[]; total: number; page: number; pageSize: number }>(
+      `/suppliers/all${buildQuery(page, pageSize, filters)}`,
+    ).then((d) => ({
+      items: d.suppliers,
+      total: d.total,
+      page: d.page,
+      pageSize: d.pageSize,
+    }) as PagedResult<Supplier>),
   getOne: (id: number) =>
     request<{ supplier: Supplier }>(`/suppliers/${id}`).then(
       (d) => d.supplier,
@@ -642,6 +802,19 @@ export const suppliersApi = {
 export const importsApi = {
   getAll: () =>
     request<{ imports: ImportView[] }>("/imports/all").then((d) => d.imports),
+  getPage: (
+    page: number,
+    pageSize = 10,
+    filters?: { search?: string; fromDate?: string; toDate?: string },
+  ) =>
+    request<{ imports: ImportView[]; total: number; page: number; pageSize: number }>(
+      `/imports/all${buildQuery(page, pageSize, filters)}`,
+    ).then((d) => ({
+      items: d.imports,
+      total: d.total,
+      page: d.page,
+      pageSize: d.pageSize,
+    }) as PagedResult<ImportView>),
   getOne: (id: number) =>
     request<{ import: Import }>(`/imports/${id}`).then((d) => d.import),
   add: (importRecord: ImportWrite) =>

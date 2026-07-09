@@ -9,6 +9,7 @@ import ImportService from '@src/services/ImportService';
 
 import { Req, Res } from './common/express-types';
 import parseReq from './common/parseReq';
+import { parsePaginationQuery } from './common/pagination';
 
 const reqValidators = {
   add: parseReq({ import: Import.isCompleteWrite }),
@@ -46,9 +47,26 @@ async function exportExcel(req: Req, res: Res) {
   res.status(HttpStatusCodes.OK).send(buffer);
 }
 
-async function getAll(_: Req, res: Res) {
-  const imports = await ImportService.getAll();
-  res.status(HttpStatusCodes.OK).json({ imports });
+async function getAll(req: Req, res: Res) {
+  const pagination = parsePaginationQuery(req.query, 10);
+  const filters = {
+    search: typeof req.query.search === 'string' ? req.query.search : undefined,
+    fromDate: typeof req.query.fromDate === 'string' ? req.query.fromDate : undefined,
+    toDate: typeof req.query.toDate === 'string' ? req.query.toDate : undefined,
+  };
+  if (!pagination.enabled) {
+    const imports = await ImportService.getAll();
+    res.status(HttpStatusCodes.OK).json({ imports });
+    return;
+  }
+
+  const result = await ImportService.getPage(pagination.page, pagination.pageSize, filters);
+  res.status(HttpStatusCodes.OK).json({
+    imports: result.items,
+    total: result.total,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
 }
 
 async function getOne(req: Req, res: Res) {

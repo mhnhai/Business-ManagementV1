@@ -13,6 +13,7 @@ import { resolveEmployeeDataScope } from '@src/services/employee-scope';
 
 import { Req, Res } from './common/express-types';
 import parseReq from './common/parseReq';
+import { parsePaginationQuery } from './common/pagination';
 
 function activityWriteForSession(
   sessionUser: ISessionUser,
@@ -41,11 +42,30 @@ const reqValidators = {
                                 Functions
 ******************************************************************************/
 
-async function getAll(_: Req, res: Res) {
+async function getAll(req: Req, res: Res) {
   const sessionUser = res.locals.sessionUser as ISessionUser;
   const scope = await resolveEmployeeDataScope(sessionUser);
-  const activities = await ActivityService.getAll(scope);
-  res.status(HttpStatusCodes.OK).json({ activities });
+  const pagination = parsePaginationQuery(req.query, 10);
+  const filters = {
+    search: typeof req.query.search === 'string' ? req.query.search : undefined,
+    status: typeof req.query.status === 'string' ? req.query.status : undefined,
+    debt: typeof req.query.debt === 'string' ? req.query.debt : undefined,
+    fromDate: typeof req.query.fromDate === 'string' ? req.query.fromDate : undefined,
+    toDate: typeof req.query.toDate === 'string' ? req.query.toDate : undefined,
+  };
+  if (!pagination.enabled) {
+    const activities = await ActivityService.getAll(scope);
+    res.status(HttpStatusCodes.OK).json({ activities });
+    return;
+  }
+
+  const result = await ActivityService.getPage(scope, pagination.page, pagination.pageSize, filters);
+  res.status(HttpStatusCodes.OK).json({
+    activities: result.items,
+    total: result.total,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
 }
 
 function queryString(value: unknown): string {

@@ -332,7 +332,7 @@ export function buildSalesInvoicePrintData(input: {
       lineTotal: line.lineTotal,
     })),
     totalAmount,
-    content: activity.content,
+    content: activity.content ?? undefined,
     paymentStatusLabel:
       PAYMENT_STATUS_LABELS[activity.paymentStatus] ?? activity.paymentStatus,
   };

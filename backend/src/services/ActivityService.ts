@@ -55,6 +55,24 @@ async function getAll(scope: EmployeeDataScope) {
   return ActivityRepo.getAllWithPaymentInfo(scope.userId);
 }
 
+async function getPage(
+  scope: EmployeeDataScope,
+  page: number,
+  pageSize: number,
+  filters?: {
+    search?: string;
+    status?: string;
+    debt?: string;
+    fromDate?: string;
+    toDate?: string;
+  },
+) {
+  if (scope.mode === 'all') {
+    return ActivityRepo.getPageWithPaymentInfo(page, pageSize, undefined, filters);
+  }
+  return ActivityRepo.getPageWithPaymentInfo(page, pageSize, scope.userId, filters);
+}
+
 async function getOne(id: number, scope: EmployeeDataScope) {
   return assertActivityAccess(id, scope);
 }
@@ -215,6 +233,7 @@ async function deleteOne(id: number, scope: EmployeeDataScope): Promise<void> {
 export default {
   Errors,
   getAll,
+  getPage,
   getOne,
   addOne,
   updateOne,

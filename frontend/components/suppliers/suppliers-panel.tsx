@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { suppliersApi } from "@/lib/api";
@@ -27,9 +27,7 @@ import {
 } from "@/components/ui/table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ListTableShell } from "@/components/ui/list-table-shell";
-import { usePagination } from "@/hooks/use-pagination";
-import { listCol, listCell } from "@/lib/list-table-layout";
-import { matchesAnySearchField } from "@/lib/list-search";
+import { listCol, listCell, listHead } from "@/lib/list-table-layout";
 
 const emptyForm = {
   id: 0,
@@ -49,46 +47,30 @@ export function SuppliersPanel() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const filteredSuppliers = useMemo(
-    () =>
-      suppliers.filter((supplier) =>
-        matchesAnySearchField(
-          [
-            supplier.id,
-            supplier.supplierName,
-            supplier.businessType,
-            supplier.address,
-            supplier.phoneNumber,
-            supplier.email,
-          ],
-          searchQuery,
-        ),
-      ),
-    [suppliers, searchQuery],
-  );
+  const filteredSuppliers = suppliers;
 
-  const {
-    page,
-    setPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    paginatedItems: paginatedSuppliers,
-  } = usePagination(filteredSuppliers, undefined, searchQuery);
-
-  const load = useCallback(async () => {
+  const load = useCallback(async (targetPage = page, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await suppliersApi.getAll();
-      setSuppliers(data);
+      const data = await suppliersApi.getPage(targetPage, pageSize, {
+        search: search.trim() || undefined,
+      });
+      setSuppliers(data.items);
+      setTotalItems(data.total);
+      setTotalPages(Math.max(1, Math.ceil(data.total / data.pageSize)));
+      setPage(data.page);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không tải được dữ liệu");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, searchQuery]);
 
   useEffect(() => {
     void load();
@@ -161,7 +143,10 @@ export function SuppliersPanel() {
         <div className="flex flex-wrap items-center gap-2">
           <ListSearchBar
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={(value) => {
+              setSearchQuery(value);
+              void load(1, value);
+            }}
             placeholder="Tìm theo tên, địa chỉ, SĐT, email..."
           />
           <div className="flex gap-2 sm:ml-auto">
@@ -204,28 +189,31 @@ export function SuppliersPanel() {
                 totalPages={totalPages}
                 totalItems={totalItems}
                 pageSize={pageSize}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => {
+                  setPage(nextPage);
+                  void load(nextPage);
+                }}
               />
             }
           >
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className={listCol.id}>ID</TableHead>
+                <TableHead className={`${listCol.id} ${listHead.center}`}>ID</TableHead>
                 <TableHead className={listCol.name}>Tên</TableHead>
                 <TableHead className={listCol.type}>Loại hình</TableHead>
                 <TableHead>Địa chỉ</TableHead>
-                <TableHead className={listCol.phone}>Điện thoại</TableHead>
+                <TableHead className={`${listCol.phone} ${listHead.center}`}>Điện thoại</TableHead>
                 <TableHead className={listCol.email}>Email</TableHead>
                 {isAdmin && (
-                  <TableHead className={listCol.actions}>Thao tác</TableHead>
+                  <TableHead className={`${listCol.actions} ${listHead.center}`}>Thao tác</TableHead>
                 )}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedSuppliers.map((supplier) => (
+              {filteredSuppliers.map((supplier) => (
                 <TableRow key={supplier.id}>
-                  <TableCell className={listCell.nowrap}>{supplier.id}</TableCell>
+                  <TableCell className={listCell.center}>{supplier.id}</TableCell>
                   <TableCell className={`font-medium ${listCell.truncate}`}>
                     {supplier.supplierName}
                   </TableCell>
@@ -233,13 +221,15 @@ export function SuppliersPanel() {
                   <TableCell className={listCell.truncate}>
                     {supplier.address}
                   </TableCell>
-                  <TableCell className={listCell.nowrap}>{supplier.phoneNumber}</TableCell>
+                  <TableCell className={listCell.center}>{supplier.phoneNumber}</TableCell>
                   <TableCell className={listCell.truncate}>{supplier.email}</TableCell>
                   {isAdmin && (
-                    <TableCell className={listCell.actions}>
+                    <TableCell className={listCell.actionsCenter}>
+                      <div className="flex flex-nowrap items-center justify-center gap-0">
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-8 w-8 shrink-0 p-0"
                         onClick={() => openEdit(supplier)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -247,10 +237,12 @@ export function SuppliersPanel() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-8 w-8 shrink-0 p-0"
                         onClick={() => void handleDelete(supplier.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>

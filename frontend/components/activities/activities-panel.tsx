@@ -47,10 +47,7 @@ import {
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ListTableShell } from "@/components/ui/list-table-shell";
 
-import { usePagination } from "@/hooks/use-pagination";
-
-import { listCol, listCell } from "@/lib/list-table-layout";
-import { matchesAnySearchField } from "@/lib/list-search";
+import { listCol, listCell, listHead } from "@/lib/list-table-layout";
 
 
 
@@ -85,51 +82,6 @@ function defaultToDate() {
 }
 
 
-
-function activityDateKey(value: string) {
-
-  const d = new Date(value);
-
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-
-  const day = String(d.getDate()).padStart(2, "0");
-
-  return `${d.getFullYear()}-${month}-${day}`;
-
-}
-
-
-
-function matchesDateFilter(
-  activityDate: string,
-  from: string,
-  to: string,
-) {
-
-  if (!from && !to) return true;
-
-  const key = activityDateKey(activityDate);
-
-  if (from && key < from) return false;
-
-  if (to && key > to) return false;
-
-  return true;
-
-}
-
-
-
-function matchesDebtFilter(
-  activity: Activity,
-  filterDebt: "all" | "debt" | "paid",
-) {
-  if (filterDebt === "all") return true;
-  if (!activity.invoiceId) return false;
-  const remaining = activity.remaining ?? 0;
-  if (filterDebt === "debt") return remaining > 0;
-  return remaining <= 0;
-}
 
 export function ActivitiesPanel() {
   const { user, isAdmin } = useAuth();
@@ -170,6 +122,10 @@ export function ActivitiesPanel() {
 
   const [exporting, setExporting] = useState(false);
   const [printingId, setPrintingId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const userMap = useMemo(
     () => Object.fromEntries(users.map((u) => [u.id, u.fullName])),
@@ -186,61 +142,24 @@ export function ActivitiesPanel() {
     [customers],
   );
 
-  const filteredActivities = useMemo(
-    () =>
-      activities.filter((activity) => {
-        const statusMatch =
-          filterStatus === "all" || activity.status === filterStatus;
-        const dateMatch = matchesDateFilter(
-          activity.activityDate,
-          filterFrom,
-          filterTo,
-        );
-        const debtMatch = matchesDebtFilter(activity, filterDebt);
-        if (!statusMatch || !dateMatch || !debtMatch) return false;
+  const filteredActivities = activities;
 
-        return matchesAnySearchField(
-          [
-            activity.id,
-            customerMap[activity.customerId],
-            activity.customerId,
-            userMap[activity.userId],
-            activity.userId,
-            statusMap[activity.status],
-            activity.status,
-            activity.content,
-            formatDate(activity.activityDate),
-          ],
-          searchQuery,
-        );
-      }),
-    [
-      activities,
-      filterStatus,
-      filterDebt,
-      filterFrom,
-      filterTo,
-      searchQuery,
-      customerMap,
-      userMap,
-      statusMap,
-    ],
-  );
-
-  const filterKey = `${filterStatus}|${filterDebt}|${filterFrom}|${filterTo}|${searchQuery}`;
-
-  const {
-    page,
-    setPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    paginatedItems: paginatedActivities,
-  } = usePagination(filteredActivities, undefined, filterKey);
-
-
-
-  const load = useCallback(async () => {
+  const load = useCallback(
+    async (
+      targetPage = page,
+      overrides?: {
+        searchQuery?: string;
+        filterStatus?: string;
+        filterDebt?: "all" | "debt" | "paid";
+        filterFrom?: string;
+        filterTo?: string;
+      },
+    ) => {
+    const search = overrides?.searchQuery ?? searchQuery;
+    const status = overrides?.filterStatus ?? filterStatus;
+    const debt = overrides?.filterDebt ?? filterDebt;
+    const from = overrides?.filterFrom ?? filterFrom;
+    const to = overrides?.filterTo ?? filterTo;
 
     setLoading(true);
 
@@ -249,7 +168,13 @@ export function ActivitiesPanel() {
     try {
 
       const [activityList, customerList, statuses] = await Promise.all([
-        activitiesApi.getAll(),
+        activitiesApi.getPage(targetPage, pageSize, {
+          search: search.trim() || undefined,
+          status: status !== "all" ? status : undefined,
+          debt: debt !== "all" ? debt : undefined,
+          fromDate: from || undefined,
+          toDate: to || undefined,
+        }),
         lookupApi.customers(),
         orderStatusesApi.getAll(),
       ]);
@@ -258,7 +183,10 @@ export function ActivitiesPanel() {
         ? await lookupApi.users()
         : [];
 
-      setActivities(activityList);
+      setActivities(activityList.items);
+      setTotalItems(activityList.total);
+      setTotalPages(Math.max(1, Math.ceil(activityList.total / activityList.pageSize)));
+      setPage(activityList.page);
 
       setUsers(userList);
 
@@ -286,7 +214,7 @@ export function ActivitiesPanel() {
 
     }
 
-  }, [isAdmin]);
+  }, [isAdmin, page, searchQuery, filterStatus, filterDebt, filterFrom, filterTo]);
 
 
 
@@ -295,8 +223,6 @@ export function ActivitiesPanel() {
     void load();
 
   }, [load]);
-
-
 
   function openDetail(activity: Activity) {
 
@@ -448,7 +374,10 @@ export function ActivitiesPanel() {
         <div className="flex flex-wrap items-center gap-2">
           <ListSearchBar
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={(value) => {
+              setSearchQuery(value);
+              void load(1, { searchQuery: value });
+            }}
             placeholder="Tìm theo khách hàng, nhân viên, nội dung, trạng thái..."
           />
           <div className="flex flex-wrap gap-2 sm:ml-auto">
@@ -475,7 +404,10 @@ export function ActivitiesPanel() {
         </div>
 
         <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/20 px-3 py-2">
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <Select value={filterStatus} onValueChange={(value) => {
+            setFilterStatus(value);
+            void load(1, { filterStatus: value });
+          }}>
             <SelectTrigger id="filter-status" className="h-8 w-[150px] bg-background text-xs">
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
@@ -491,7 +423,10 @@ export function ActivitiesPanel() {
 
           <Select
             value={filterDebt}
-            onValueChange={(v) => setFilterDebt(v as "all" | "debt" | "paid")}
+            onValueChange={(v) => {
+              setFilterDebt(v as "all" | "debt" | "paid");
+              void load(1, { filterDebt: v as "all" | "debt" | "paid" });
+            }}
           >
             <SelectTrigger
               id="filter-debt"
@@ -510,7 +445,10 @@ export function ActivitiesPanel() {
             id="filter-from"
             type="date"
             value={filterFrom}
-            onChange={(e) => setFilterFrom(e.target.value)}
+            onChange={(e) => {
+              setFilterFrom(e.target.value);
+              void load(1, { filterFrom: e.target.value });
+            }}
             className="h-8 w-[140px] bg-background text-xs"
           />
           <Input
@@ -519,7 +457,10 @@ export function ActivitiesPanel() {
             title="Lọc đến ngày"
             value={filterTo}
             min={filterFrom || undefined}
-            onChange={(e) => setFilterTo(e.target.value)}
+            onChange={(e) => {
+              setFilterTo(e.target.value);
+              void load(1, { filterTo: e.target.value });
+            }}
             className="h-8 w-[140px] bg-background text-xs"
           />
 
@@ -584,43 +525,48 @@ export function ActivitiesPanel() {
                 totalPages={totalPages}
                 totalItems={totalItems}
                 pageSize={pageSize}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => {
+                  setPage(nextPage);
+                  void load(nextPage);
+                }}
               />
             }
           >
             <Table className="min-w-[960px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className={listCol.id}>ID</TableHead>
+                  <TableHead className={`${listCol.id} ${listHead.center}`}>ID</TableHead>
                   <TableHead className={listCol.name}>Khách hàng</TableHead>
-                  <TableHead className={listCol.invoice}>Hóa đơn</TableHead>
-                  <TableHead className={listCol.status}>Trạng thái</TableHead>
-                  <TableHead className={listCol.payment}>Thanh toán</TableHead>
-                  <TableHead className={listCol.money}>Tổng đơn</TableHead>
-                  <TableHead className={listCol.money}>Đã thanh toán</TableHead>
-                  <TableHead className={listCol.datetime}>Ngày tạo</TableHead>
+                  <TableHead className={`${listCol.invoice} ${listHead.center}`}>Hóa đơn</TableHead>
+                  <TableHead className={`${listCol.status} ${listHead.center}`}>Trạng thái</TableHead>
+                  <TableHead className={`${listCol.payment} ${listHead.center}`}>Thanh toán</TableHead>
+                  <TableHead className={`${listCol.money} ${listHead.right}`}>Tổng đơn</TableHead>
+                  <TableHead className={`${listCol.money} ${listHead.right}`}>Đã thanh toán</TableHead>
+                  <TableHead className={`${listCol.datetime} ${listHead.center}`}>Ngày tạo</TableHead>
                   <TableHead>Nội dung</TableHead>
-                  <TableHead className={listCol.actions}>Thao tác</TableHead>
+                  <TableHead className={`${listCol.actionsWide} ${listHead.center}`}>Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedActivities.map((activity) => (
+                {filteredActivities.map((activity) => (
                   <TableRow key={activity.id}>
-                    <TableCell className={`text-muted-foreground ${listCell.nowrap}`}>
+                    <TableCell className={`text-muted-foreground ${listCell.center}`}>
                       {activity.id}
                     </TableCell>
                     <TableCell className={`text-sm ${listCell.truncate}`}>
                       {customerMap[activity.customerId] ?? `#${activity.customerId}`}
                     </TableCell>
-                    <TableCell className={listCell.nowrap}>
+                    <TableCell className={listCell.center}>
                       {activity.invoiceId ? `#${activity.invoiceId}` : "—"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className={listCell.status}>
+                      <div className="flex justify-center">
                       <Badge variant="outline" className="text-xs">
                         {statusMap[activity.status] ?? activity.status}
                       </Badge>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-xs">
+                    <TableCell className={`text-xs ${listCell.center}`}>
                       {activity.invoiceId
                         ? activity.paymentStatusLabel ?? activity.paymentStatus
                         : "—"}
@@ -635,17 +581,18 @@ export function ActivitiesPanel() {
                         ? `${formatMoney(activity.paidTotal)} đ`
                         : "—"}
                     </TableCell>
-                    <TableCell className={`text-sm ${listCell.nowrap}`}>
+                    <TableCell className={`text-sm ${listCell.center}`}>
                       {formatDate(activity.activityDate)}
                     </TableCell>
                     <TableCell className={`text-sm ${listCell.truncate}`}>
                       {activity.content}
                     </TableCell>
-                    <TableCell className={listCell.actions}>
-                      <div className="flex items-center justify-end gap-1">
+                    <TableCell className={listCell.actionsCenter}>
+                      <div className="flex flex-nowrap items-center justify-center gap-0">
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="h-8 w-8 shrink-0 p-0"
                           title="Mở chi tiết"
                           onClick={() => openDetail(activity)}
                         >
@@ -655,6 +602,7 @@ export function ActivitiesPanel() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-8 w-8 shrink-0 p-0"
                             title="In hóa đơn A5"
                             disabled={printingId === activity.id}
                             onClick={() => void handlePrint(activity)}
@@ -666,6 +614,7 @@ export function ActivitiesPanel() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-8 w-8 shrink-0 p-0"
                             title="Xóa"
                             onClick={() => void handleDelete(activity.id)}
                           >

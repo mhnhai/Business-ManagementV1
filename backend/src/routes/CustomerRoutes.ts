@@ -10,6 +10,7 @@ import { resolveEmployeeDataScope } from '@src/services/employee-scope';
 
 import { Req, Res } from './common/express-types';
 import parseReq from './common/parseReq';
+import { parsePaginationQuery } from './common/pagination';
 
 /******************************************************************************
                                 Constants
@@ -44,11 +45,24 @@ function parseReceivePaymentBody(body: unknown): { amount: number; method: strin
                                 Functions
 ******************************************************************************/
 
-async function getAll(_: Req, res: Res) {
+async function getAll(req: Req, res: Res) {
   const sessionUser = res.locals.sessionUser as ISessionUser;
   const scope = await resolveEmployeeDataScope(sessionUser);
-  const customers = await CustomerService.getAll(scope);
-  res.status(HttpStatusCodes.OK).json({ customers });
+  const pagination = parsePaginationQuery(req.query, 10);
+  const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+  if (!pagination.enabled) {
+    const customers = await CustomerService.getAll(scope);
+    res.status(HttpStatusCodes.OK).json({ customers });
+    return;
+  }
+
+  const result = await CustomerService.getPage(scope, pagination.page, pagination.pageSize, search);
+  res.status(HttpStatusCodes.OK).json({
+    customers: result.items,
+    total: result.total,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
 }
 
 async function getOne(req: Req, res: Res) {

@@ -1,5 +1,5 @@
-import { isNonEmptyString, isUnsignedInteger } from 'jet-validators';
-import { parseObject, Schema, testObject } from 'jet-validators/utils';
+import { isString, isUnsignedInteger } from 'jet-validators';
+import { makeNullable, parseObject, Schema, testObject } from 'jet-validators/utils';
 import { transformIsDate } from '@src/common/utils/validators';
 
 import { Entity } from './common/types';
@@ -10,12 +10,12 @@ import { Entity } from './common/types';
 export interface IImport extends Entity {
   supplierId: number;
   importDate: Date;
-  content: string;
+  content: string | null;
 }
 
 export interface IImportWrite {
   supplierId: number;
-  content: string;
+  content: string | null;
 }
 
 export interface IImportView extends IImport {
@@ -28,23 +28,25 @@ const GetDefaults = (): IImport => ({
   id: 0,
   supplierId: 0,
   importDate: new Date(),
-  content: '',
+  content: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 });
+
+const isNullableString = makeNullable(isString);
 
 const schema = {
   id: isUnsignedInteger,
   supplierId: isUnsignedInteger,
   importDate: transformIsDate,
-  content: isNonEmptyString,
+  content: isNullableString,
   createdAt: transformIsDate,
   updatedAt: transformIsDate,
 } satisfies Schema<IImport>;
 
 const writeSchema = {
   supplierId: isUnsignedInteger,
-  content: isNonEmptyString,
+  content: isNullableString,
 } satisfies Schema<IImportWrite>;
 
 const parseImport = parseObject(schema);
@@ -68,7 +70,7 @@ function newWrite(record?: Partial<IImportWrite>): IImportWrite {
   return parseImportWrite(
     {
       supplierId: 0,
-      content: '',
+      content: null,
       ...record,
     },
     (errors) => {

@@ -7,6 +7,7 @@ import ProductService from '@src/services/ProductService';
 
 import { Req, Res } from './common/express-types';
 import parseReq from './common/parseReq';
+import { parsePaginationQuery } from './common/pagination';
 
 /******************************************************************************
                                 Constants
@@ -23,9 +24,22 @@ const reqValidators = {
                                 Functions
 ******************************************************************************/
 
-async function getAll(_: Req, res: Res) {
-  const products = await ProductService.getAll();
-  res.status(HttpStatusCodes.OK).json({ products });
+async function getAll(req: Req, res: Res) {
+  const pagination = parsePaginationQuery(req.query, 10);
+  const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+  if (!pagination.enabled) {
+    const products = await ProductService.getAll();
+    res.status(HttpStatusCodes.OK).json({ products });
+    return;
+  }
+
+  const result = await ProductService.getPage(pagination.page, pagination.pageSize, search);
+  res.status(HttpStatusCodes.OK).json({
+    products: result.items,
+    total: result.total,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
 }
 
 async function getOne(req: Req, res: Res) {

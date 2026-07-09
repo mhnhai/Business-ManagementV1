@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Eye, FileDown, Plus, RefreshCw, Trash2, X } from "lucide-react";
 
 import { ImportDetailDialog } from "@/components/imports/import-detail-dialog";
@@ -21,9 +21,7 @@ import {
 } from "@/components/ui/table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ListTableShell } from "@/components/ui/list-table-shell";
-import { usePagination } from "@/hooks/use-pagination";
-import { listCol, listCell } from "@/lib/list-table-layout";
-import { matchesAnySearchField } from "@/lib/list-search";
+import { listCol, listCell, listHead } from "@/lib/list-table-layout";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("vi-VN");
@@ -31,21 +29,6 @@ function formatDate(value: string) {
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("vi-VN").format(value);
-}
-
-function importDateKey(value: string) {
-  const d = new Date(value);
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${month}-${day}`;
-}
-
-function matchesDateFilter(importDate: string, from: string, to: string) {
-  if (!from && !to) return true;
-  const key = importDateKey(importDate);
-  if (from && key < from) return false;
-  if (to && key > to) return false;
-  return true;
 }
 
 function defaultFromDate() {
@@ -73,56 +56,42 @@ export function ImportsPanel() {
   const [exportFrom, setExportFrom] = useState(defaultFromDate);
   const [exportTo, setExportTo] = useState(defaultToDate);
   const [exporting, setExporting] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const filteredImports = useMemo(
-    () =>
-      imports.filter((record) => {
-        if (!matchesDateFilter(record.importDate, filterFrom, filterTo)) {
-          return false;
-        }
-        return matchesAnySearchField(
-          [
-            record.id,
-            record.supplierName,
-            record.supplierId,
-            record.content,
-            record.totalAmount,
-            record.lineCount,
-            formatDate(record.importDate),
-          ],
-          searchQuery,
-        );
-      }),
-    [imports, filterFrom, filterTo, searchQuery],
-  );
+  const filteredImports = imports;
 
-  const filterKey = `${filterFrom}|${filterTo}|${searchQuery}`;
-
-  const {
-    page,
-    setPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    paginatedItems: paginatedImports,
-  } = usePagination(filteredImports, undefined, filterKey);
-
-  const load = useCallback(async () => {
+  const load = useCallback(async (
+    targetPage = page,
+    overrides?: { searchQuery?: string; filterFrom?: string; filterTo?: string },
+  ) => {
+    const search = overrides?.searchQuery ?? searchQuery;
+    const from = overrides?.filterFrom ?? filterFrom;
+    const to = overrides?.filterTo ?? filterTo;
     setLoading(true);
     setError(null);
     try {
       const [importList, supplierList] = await Promise.all([
-        importsApi.getAll(),
+        importsApi.getPage(targetPage, pageSize, {
+          search: search.trim() || undefined,
+          fromDate: from || undefined,
+          toDate: to || undefined,
+        }),
         lookupApi.suppliers(),
       ]);
-      setImports(importList);
+      setImports(importList.items);
+      setTotalItems(importList.total);
+      setTotalPages(Math.max(1, Math.ceil(importList.total / importList.pageSize)));
+      setPage(importList.page);
       setSuppliers(supplierList);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không tải được dữ liệu");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, searchQuery, filterFrom, filterTo]);
 
   useEffect(() => {
     void load();
@@ -192,7 +161,10 @@ export function ImportsPanel() {
         <div className="flex flex-wrap items-center gap-2">
           <ListSearchBar
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={(value) => {
+              setSearchQuery(value);
+              void load(1, { searchQuery: value });
+            }}
             placeholder="Tìm theo nhà cung cấp, nội dung, ID..."
           />
           <div className="flex flex-wrap gap-2 sm:ml-auto">
@@ -226,7 +198,10 @@ export function ImportsPanel() {
             type="date"
             title="Lọc từ ngày"
             value={filterFrom}
-            onChange={(e) => setFilterFrom(e.target.value)}
+            onChange={(e) => {
+              setFilterFrom(e.target.value);
+              void load(1, { filterFrom: e.target.value });
+            }}
             className="h-8 w-[140px] bg-background text-xs"
           />
           <Input
@@ -235,7 +210,10 @@ export function ImportsPanel() {
             title="Lọc đến ngày"
             value={filterTo}
             min={filterFrom || undefined}
-            onChange={(e) => setFilterTo(e.target.value)}
+            onChange={(e) => {
+              setFilterTo(e.target.value);
+              void load(1, { filterTo: e.target.value });
+            }}
             className="h-8 w-[140px] bg-background text-xs"
           />
           {hasActiveFilters && (
@@ -297,30 +275,33 @@ export function ImportsPanel() {
                 totalPages={totalPages}
                 totalItems={totalItems}
                 pageSize={pageSize}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => {
+                  setPage(nextPage);
+                  void load(nextPage);
+                }}
               />
             }
           >
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className={listCol.id}>ID</TableHead>
+                <TableHead className={`${listCol.id} ${listHead.center}`}>ID</TableHead>
                 <TableHead className={listCol.name}>Nhà cung cấp</TableHead>
-                <TableHead className={listCol.datetime}>Ngày tạo</TableHead>
+                <TableHead className={`${listCol.datetime} ${listHead.center}`}>Ngày tạo</TableHead>
                 <TableHead>Nội dung</TableHead>
-                <TableHead className={listCol.number}>Số dòng</TableHead>
-                <TableHead className={listCol.money}>Tổng giá trị</TableHead>
-                <TableHead className={listCol.actions}>Thao tác</TableHead>
+                <TableHead className={`${listCol.number} ${listHead.right}`}>Số dòng</TableHead>
+                <TableHead className={`${listCol.money} ${listHead.right}`}>Tổng giá trị</TableHead>
+                <TableHead className={`${listCol.actions} ${listHead.center}`}>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedImports.map((record) => (
+              {filteredImports.map((record) => (
                 <TableRow key={record.id}>
-                  <TableCell className={listCell.nowrap}>{record.id}</TableCell>
+                  <TableCell className={listCell.center}>{record.id}</TableCell>
                   <TableCell className={listCell.truncate}>
                     {record.supplierName ?? `#${record.supplierId}`}
                   </TableCell>
-                  <TableCell className={listCell.nowrap}>{formatDate(record.importDate)}</TableCell>
+                  <TableCell className={listCell.center}>{formatDate(record.importDate)}</TableCell>
                   <TableCell className={listCell.truncate}>
                     {record.content}
                   </TableCell>
@@ -328,10 +309,12 @@ export function ImportsPanel() {
                   <TableCell className={listCell.money}>
                     {formatMoney(record.totalAmount ?? 0)} đ
                   </TableCell>
-                  <TableCell className={listCell.actions}>
+                  <TableCell className={listCell.actionsCenter}>
+                    <div className="flex flex-nowrap items-center justify-center gap-0">
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="h-8 w-8 shrink-0 p-0"
                       title="Mở chi tiết"
                       onClick={() => openDetail(record)}
                     >
@@ -341,11 +324,13 @@ export function ImportsPanel() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-8 w-8 shrink-0 p-0"
                         onClick={() => void handleDelete(record.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

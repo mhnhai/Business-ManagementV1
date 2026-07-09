@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Eye, EyeOff, Lock, User, LogIn, Mail, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { authApi } from "@/lib/api";
-import { useAuth } from "@/lib/auth-context";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
   const router = useRouter();
-  const { refresh } = useAuth();
   const [view, setView] = useState<"login" | "forgot">("login");
   
   const [loading, setLoading] = useState(false);
@@ -31,9 +30,19 @@ export function LoginForm() {
     const password = formData.get("password") as string;
 
     try {
-      await authApi.login({ username, password });
-      await refresh();
+      const result = await signIn("credentials", {
+        username,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Tên đăng nhập hoặc mật khẩu không đúng");
+        return;
+      }
+
       router.push("/");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Tên đăng nhập hoặc mật khẩu không đúng");
     } finally {

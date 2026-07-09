@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { productsApi } from "@/lib/api";
@@ -27,9 +27,7 @@ import {
 } from "@/components/ui/table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ListTableShell } from "@/components/ui/list-table-shell";
-import { usePagination } from "@/hooks/use-pagination";
-import { listCol, listCell } from "@/lib/list-table-layout";
-import { matchesAnySearchField } from "@/lib/list-search";
+import { listCol, listCell, listHead } from "@/lib/list-table-layout";
 
 const emptyForm = {
   id: 0,
@@ -42,6 +40,13 @@ function formatMoney(value: number) {
   return new Intl.NumberFormat("vi-VN").format(value);
 }
 
+function formatAmountPreview(value: string) {
+  if (!value.trim()) return "—";
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) return "—";
+  return formatMoney(amount);
+}
+
 export function ProductsPanel() {
   const { isAdmin } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
@@ -51,39 +56,30 @@ export function ProductsPanel() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const filteredProducts = useMemo(
-    () =>
-      products.filter((product) =>
-        matchesAnySearchField(
-          [product.id, product.productName, product.unitPrice, product.stockQuantity],
-          searchQuery,
-        ),
-      ),
-    [products, searchQuery],
-  );
+  const filteredProducts = products;
 
-  const {
-    page,
-    setPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    paginatedItems: paginatedProducts,
-  } = usePagination(filteredProducts, undefined, searchQuery);
-
-  const load = useCallback(async () => {
+  const load = useCallback(async (targetPage = page, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await productsApi.getAll();
-      setProducts(data);
+      const data = await productsApi.getPage(targetPage, pageSize, {
+        search: search.trim() || undefined,
+      });
+      setProducts(data.items);
+      setTotalItems(data.total);
+      setTotalPages(Math.max(1, Math.ceil(data.total / data.pageSize)));
+      setPage(data.page);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không tải được dữ liệu");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, searchQuery]);
 
   useEffect(() => {
     void load();
@@ -106,7 +102,6 @@ export function ProductsPanel() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setError(null);
     try {
       const payload = {
@@ -115,6 +110,10 @@ export function ProductsPanel() {
         unitPrice: Number(form.unitPrice),
         stockQuantity: Number(form.stockQuantity),
       };
+
+      if (!confirm("Xác nhận thông tin chính xác?")) return;
+
+      setSaving(true);
       if (form.id === 0) {
         const { id: _id, ...createPayload } = payload;
         await productsApi.add(createPayload);
@@ -147,7 +146,10 @@ export function ProductsPanel() {
         <div className="flex flex-wrap items-center gap-2">
           <ListSearchBar
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={(value) => {
+              setSearchQuery(value);
+              void load(1, value);
+            }}
             placeholder="Tìm theo tên, ID, giá, tồn kho..."
           />
           <div className="flex gap-2 sm:ml-auto">
@@ -190,36 +192,41 @@ export function ProductsPanel() {
                 totalPages={totalPages}
                 totalItems={totalItems}
                 pageSize={pageSize}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => {
+                  setPage(nextPage);
+                  void load(nextPage);
+                }}
               />
             }
           >
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className={listCol.id}>ID</TableHead>
+                <TableHead className={`${listCol.id} ${listHead.center}`}>ID</TableHead>
                 <TableHead>Tên sản phẩm</TableHead>
-                <TableHead className={listCol.money}>Đơn giá</TableHead>
-                <TableHead className={listCol.number}>Tồn kho</TableHead>
+                <TableHead className={`${listCol.money} ${listHead.right}`}>Đơn giá</TableHead>
+                <TableHead className={`${listCol.number} ${listHead.right}`}>Tồn kho</TableHead>
                 {isAdmin && (
-                  <TableHead className={listCol.actions}>Thao tác</TableHead>
+                  <TableHead className={`${listCol.actions} ${listHead.center}`}>Thao tác</TableHead>
                 )}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedProducts.map((product) => (
+              {filteredProducts.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className={listCell.nowrap}>{product.id}</TableCell>
+                  <TableCell className={listCell.center}>{product.id}</TableCell>
                   <TableCell className={`font-medium ${listCell.truncate}`}>
                     {product.productName}
                   </TableCell>
                   <TableCell className={listCell.money}>{formatMoney(product.unitPrice)}</TableCell>
                   <TableCell className={listCell.number}>{product.stockQuantity}</TableCell>
                   {isAdmin && (
-                    <TableCell className={listCell.actions}>
+                    <TableCell className={listCell.actionsCenter}>
+                      <div className="flex flex-nowrap items-center justify-center gap-0">
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-8 w-8 shrink-0 p-0"
                         onClick={() => openEdit(product)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -227,10 +234,12 @@ export function ProductsPanel() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-8 w-8 shrink-0 p-0"
                         onClick={() => void handleDelete(product.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
@@ -262,6 +271,9 @@ export function ProductsPanel() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="unitPrice">Đơn giá</Label>
+              <p className="text-xs text-muted-foreground">
+                Hiển thị: {formatAmountPreview(form.unitPrice)}
+              </p>
               <Input
                 id="unitPrice"
                 type="number"

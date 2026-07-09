@@ -7,6 +7,7 @@ import Salary from '@src/models/Salary.model';
 import { Req, Res } from './common/express-types';
 import parseReq from './common/parseReq';
 import SalaryService from '@src/services/SalaryService';
+import { parsePaginationQuery } from './common/pagination';
 
 /******************************************************************************
                                    Constants
@@ -32,9 +33,25 @@ const reqValidators = {
  * Get all salary records (Admin only).
  * @route GET /api/salaries/all
  */
-async function getAll(_: Req, res: Res) {
-  const salaries = await SalaryService.getAll();
-  res.status(HttpStatusCodes.OK).json({ salaries });
+async function getAll(req: Req, res: Res) {
+  const pagination = parsePaginationQuery(req.query, 10);
+  const filters = {
+    month: typeof req.query.month === 'string' ? Number(req.query.month) : undefined,
+    year: typeof req.query.year === 'string' ? Number(req.query.year) : undefined,
+  };
+  if (!pagination.enabled) {
+    const salaries = await SalaryService.getAll();
+    res.status(HttpStatusCodes.OK).json({ salaries });
+    return;
+  }
+
+  const result = await SalaryService.getPage(pagination.page, pagination.pageSize, filters);
+  res.status(HttpStatusCodes.OK).json({
+    salaries: result.items,
+    total: result.total,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
 }
 
 /**

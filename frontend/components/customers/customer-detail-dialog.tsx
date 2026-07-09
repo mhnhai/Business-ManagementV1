@@ -42,8 +42,47 @@ function formatMoney(value: number) {
   return new Intl.NumberFormat("vi-VN").format(value);
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleString("vi-VN");
+function formatOrderDateTime(value: string) {
+  const date = new Date(value);
+  return {
+    date: date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }),
+    time: date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+}
+
+function orderStatusBadgeClass(status: string) {
+  switch (status) {
+    case "completed":
+      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    case "processing":
+      return "bg-amber-50 text-amber-700 ring-amber-200";
+    case "confirmed":
+      return "bg-blue-50 text-blue-700 ring-blue-200";
+    case "draft":
+      return "bg-slate-100 text-slate-600 ring-slate-200";
+    default:
+      return "bg-muted text-muted-foreground ring-border";
+  }
+}
+
+function paymentStatusBadgeClass(paymentStatus: string) {
+  switch (paymentStatus) {
+    case "paid":
+      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    case "partial":
+      return "bg-amber-50 text-amber-700 ring-amber-200";
+    case "unpaid":
+      return "bg-rose-50 text-rose-700 ring-rose-200";
+    default:
+      return "bg-muted text-muted-foreground ring-border";
+  }
 }
 
 function locationLabel(loc: Location) {
@@ -154,7 +193,7 @@ export function CustomerDetailDialog({
     locations.find((l) => l.id === customer.locationId);
 
   // Xây dựng URL bản đồ nhúng dựa trên tọa độ lat, lng của khách hàng
-  const hasCoordinates = customer?.lat && customer?.lng;
+  const hasCoordinates = customer?.lat != null && customer?.lng != null;
   const mapUrl = hasCoordinates
     ? `https://maps.google.com/maps?q=${customer.lat},${customer.lng}&t=&z=16&ie=UTF8&iwloc=&output=embed`
     : null;
@@ -162,7 +201,7 @@ export function CustomerDetailDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {customer?.companyName ?? "Chi tiết khách hàng"}
@@ -196,9 +235,9 @@ export function CustomerDetailDialog({
                     <InfoRow label="Loại hình" value={customer.businessType} />
                     <InfoRow
                       label="Người đại diện"
-                      value={`${customer.representativeName} (${customer.position})`}
+                      value={`${customer.representativeName} (${customer.position ?? "---"})`}
                     />
-                    <InfoRow label="Số điện thoại" value={customer.phoneNumber} />
+                    <InfoRow label="Số điện thoại" value={customer.phoneNumber ?? "---"} />
                     <InfoRow
                       label="Địa điểm"
                       value={
@@ -223,7 +262,7 @@ export function CustomerDetailDialog({
 
                   {/* Khu vực nhúng Bản đồ số định vị khách hàng */}
                   <div className="md:col-span-2 flex flex-col">
-                    <span className="text-xs text-muted-foreground mb-1 block font-medium flex items-center gap-1">
+                    <span className="mb-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
                       <MapPin className="h-3.5 w-3.5 text-indigo-600" /> Vị trí thực địa
                     </span>
                     <div className="w-full flex-1 min-h-[200px] rounded-lg border bg-muted overflow-hidden relative">
@@ -277,44 +316,76 @@ export function CustomerDetailDialog({
                     Chưa có đơn hàng có hóa đơn.
                   </p>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Mã đơn</TableHead>
-                        <TableHead>Ngày tạo</TableHead>
-                        <TableHead>Trạng thái đơn</TableHead>
-                        <TableHead>Thanh toán</TableHead>
-                        <TableHead className="text-right">Tổng HĐ</TableHead>
-                        <TableHead className="text-right">Đã trả</TableHead>
-                        <TableHead className="text-right">Còn nợ</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {account!.orders.map((order) => (
-                        <TableRow key={order.activityId}>
-                          <TableCell>#{order.activityId}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">
-                            {formatDate(order.createdAt)}
-                          </TableCell>
-                          <TableCell className="text-xs">
-                            {statusMap[order.status] ?? order.status}
-                          </TableCell>
-                          <TableCell className="text-xs">
-                            {order.paymentStatusLabel}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatMoney(order.invoiceTotal)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatMoney(order.paidTotal)}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatMoney(order.remaining)}
-                          </TableCell>
+                  <div className="rounded-lg border">
+                    <Table className="min-w-[780px]">
+                      <TableHeader>
+                        <TableRow className="bg-muted/40 hover:bg-muted/40">
+                          <TableHead className="w-[72px]">Mã đơn</TableHead>
+                          <TableHead className="w-[108px]">Ngày tạo</TableHead>
+                          <TableHead className="w-[128px]">Trạng thái đơn</TableHead>
+                          <TableHead className="w-[120px]">Thanh toán</TableHead>
+                          <TableHead className="w-[108px] text-right">Tổng HĐ</TableHead>
+                          <TableHead className="w-[108px] text-right">Đã trả</TableHead>
+                          <TableHead className="w-[108px] text-right">Còn nợ</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {account!.orders.map((order) => {
+                          const { date, time } = formatOrderDateTime(order.createdAt);
+                          return (
+                            <TableRow key={order.activityId}>
+                              <TableCell className="font-medium text-muted-foreground">
+                                #{order.activityId}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-0.5 leading-tight">
+                                  <span className="text-sm font-medium whitespace-nowrap">
+                                    {date}
+                                  </span>
+                                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                    {time}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span
+                                  className={`inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${orderStatusBadgeClass(order.status)}`}
+                                >
+                                  <span className="truncate">
+                                    {statusMap[order.status] ?? order.status}
+                                  </span>
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <span
+                                  className={`inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${paymentStatusBadgeClass(order.paymentStatus)}`}
+                                >
+                                  <span className="truncate">
+                                    {order.paymentStatusLabel}
+                                  </span>
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums whitespace-nowrap">
+                                {formatMoney(order.invoiceTotal)} đ
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums whitespace-nowrap text-muted-foreground">
+                                {formatMoney(order.paidTotal)} đ
+                              </TableCell>
+                              <TableCell
+                                className={`text-right tabular-nums whitespace-nowrap font-semibold ${
+                                  order.remaining > 0
+                                    ? "text-destructive"
+                                    : "text-emerald-700"
+                                }`}
+                              >
+                                {formatMoney(order.remaining)} đ
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </TabsContent>
             </Tabs>

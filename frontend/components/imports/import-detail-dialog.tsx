@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { toast } from "react-toastify";
 
 import { importDetailsApi, importsApi, lookupApi } from "@/lib/api";
 import type { Import, ImportDetail, Product, Supplier } from "@/lib/types";
@@ -53,6 +54,13 @@ function formatDate(value: string) {
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("vi-VN").format(value);
+}
+
+function formatAmountPreview(value: string) {
+  if (!value.trim()) return "—";
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) return "—";
+  return formatMoney(amount);
 }
 
 function buildDraftImport(): Import {
@@ -130,7 +138,7 @@ export function ImportDetailDialog({
         setProducts(productList);
         setHeaderForm({
           supplierId: String(record.supplierId),
-          content: record.content,
+          content: record.content ?? "",
         });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Không tải được dữ liệu");
@@ -188,9 +196,6 @@ export function ImportDetailDialog({
     if (!headerForm.supplierId) {
       throw new Error("Vui lòng chọn nhà cung cấp");
     }
-    if (!headerForm.content.trim()) {
-      throw new Error("Vui lòng nhập nội dung");
-    }
   }
 
   async function saveImport() {
@@ -205,7 +210,7 @@ export function ImportDetailDialog({
 
       const created = await importsApi.add({
         supplierId: Number(headerForm.supplierId),
-        content: headerForm.content.trim(),
+        content: headerForm.content.trim() ? headerForm.content.trim() : null,
       });
 
       for (const line of draftLines) {
@@ -224,7 +229,10 @@ export function ImportDetailDialog({
       onCreated?.(created.id);
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Lưu phiếu nhập thất bại");
+      const message =
+        err instanceof Error ? err.message : "Lưu phiếu nhập thất bại";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -248,15 +256,21 @@ export function ImportDetailDialog({
     const importPrice = Number(lineForm.importPrice);
 
     if (!productId) {
-      setError("Vui lòng chọn sản phẩm");
+      const message = "Vui lòng chọn sản phẩm";
+      setError(message);
+      toast.warning(message);
       return;
     }
     if (!quantity || quantity <= 0) {
-      setError("Số lượng phải lớn hơn 0");
+      const message = "Số lượng phải lớn hơn 0";
+      setError(message);
+      toast.warning(message);
       return;
     }
     if (!Number.isFinite(importPrice) || importPrice < 0) {
-      setError("Giá nhập không hợp lệ");
+      const message = "Giá nhập không hợp lệ";
+      setError(message);
+      toast.warning(message);
       return;
     }
 
@@ -271,7 +285,9 @@ export function ImportDetailDialog({
         ),
       );
     } else if (draftLines.some((line) => line.productId === productId)) {
-      setError("Sản phẩm đã có trong phiếu nhập");
+      const message = "Sản phẩm đã có trong phiếu nhập";
+      setError(message);
+      toast.warning(message);
       return;
     } else {
       setDraftLines((lines) => [
@@ -366,6 +382,8 @@ export function ImportDetailDialog({
                       }
                       placeholder="Chọn nhà cung cấp"
                       searchPlaceholder="Tìm theo tên, SĐT, email, địa chỉ..."
+                      minQueryLength={0}
+                      maxVisibleOptions={3}
                     />
                   ) : (
                     <p className="text-sm font-medium">{supplierName}</p>
@@ -387,7 +405,7 @@ export function ImportDetailDialog({
                       }
                     />
                   ) : (
-                    <p className="text-sm">{importRecord.content}</p>
+                    <p className="text-sm">{importRecord.content ?? "—"}</p>
                   )}
                 </div>
               </div>
@@ -428,6 +446,8 @@ export function ImportDetailDialog({
                         disabled={editingProductId !== null}
                         placeholder="Chọn sản phẩm"
                         searchPlaceholder="Tìm theo tên sản phẩm..."
+                        minQueryLength={0}
+                        maxVisibleOptions={4}
                       />
                     </div>
                     <div className="grid gap-2">
@@ -446,7 +466,12 @@ export function ImportDetailDialog({
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>Giá nhập</Label>
+                      <div className="flex items-center justify-between gap-2">
+                        <Label>Giá nhập</Label>
+                        <span className="text-xs text-muted-foreground">
+                          {formatAmountPreview(lineForm.importPrice)} đ
+                        </span>
+                      </div>
                       <Input
                         type="number"
                         min={0}

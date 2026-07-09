@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Printer, RefreshCw, Trash2 } from "lucide-react";
+import { toast } from "react-toastify";
 
 import {
   activitiesApi,
@@ -96,6 +97,13 @@ function formatDate(value: string) {
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("vi-VN").format(value);
+}
+
+function formatAmountPreview(value: string) {
+  if (!value.trim()) return "—";
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) return "—";
+  return formatMoney(amount);
 }
 
 /** Next status by sort_order (same rule as backend OrderStatusRepo.getNext). */
@@ -240,7 +248,7 @@ export function ActivityDetailDialog({
       setHeaderForm({
         userId: String(act.userId),
         customerId: String(act.customerId),
-        content: act.content,
+        content: act.content ?? "",
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không tải được dữ liệu");
@@ -302,9 +310,6 @@ export function ActivityDetailDialog({
     if (!headerForm.customerId) {
       throw new Error("Vui lòng chọn khách hàng");
     }
-    if (!headerForm.content.trim()) {
-      throw new Error("Vui lòng nhập nội dung");
-    }
   }
 
   async function ensureActivityCreated(): Promise<Activity> {
@@ -315,7 +320,7 @@ export function ActivityDetailDialog({
     const payload: ActivityWrite = {
       userId: Number(headerForm.userId),
       customerId: Number(headerForm.customerId),
-      content: headerForm.content.trim(),
+      content: headerForm.content.trim() ? headerForm.content.trim() : null,
     };
     const created = await activitiesApi.add(payload);
     setActivity(created);
@@ -329,7 +334,9 @@ export function ActivityDetailDialog({
     e.preventDefault();
     const amount = Number(paymentForm.paidAmount);
     if (!amount || amount <= 0) {
-      setError("Số tiền thu phải lớn hơn 0");
+      const message = "Số tiền thu phải lớn hơn 0";
+      setError(message);
+      toast.warning(message);
       return;
     }
     setError(null);
@@ -348,31 +355,6 @@ export function ActivityDetailDialog({
     setPendingPayments((list) => list.filter((p) => p.clientId !== clientId));
   }
 
-  async function saveHeader() {
-    if (!activity) return;
-    setSaving(true);
-    setError(null);
-    try {
-      if (activity.id === 0) {
-        await ensureActivityCreated();
-        return;
-      }
-      const payload = {
-        id: activity.id,
-        userId: Number(headerForm.userId),
-        customerId: Number(headerForm.customerId),
-        content: headerForm.content,
-      };
-      const updated = await activitiesApi.update(payload);
-      setActivity(updated);
-      onChanged();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Lưu thông tin thất bại");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   function onProductChange(productId: string) {
     const product = products.find((p) => p.id === Number(productId));
     setLineForm((f) => ({
@@ -385,27 +367,81 @@ export function ActivityDetailDialog({
   async function saveLine(e: React.FormEvent) {
     e.preventDefault();
     if (!activity) return;
+
+    const productId = Number(lineForm.productId);
+    const quantity = Number(lineForm.quantity);
+    const salePrice = Number(lineForm.salePrice);
+
+    if (!productId) {
+      const message = "Vui lòng chọn sản phẩm";
+      setError(message);
+      toast.warning(message);
+      return;
+    }
+    if (!quantity || quantity <= 0) {
+      const message = "Số lượng phải lớn hơn 0";
+      setError(message);
+      toast.warning(message);
+      return;
+    }
+    if (!Number.isFinite(salePrice) || salePrice < 0) {
+      const message = "Giá bán không hợp lệ";
+      setError(message);
+      toast.warning(message);
+      return;
+    }
+    if (
+      editingProductId === null &&
+      details.some((line) => line.productId === productId)
+    ) {
+      const message = "Sản phẩm đã có trong chi tiết hoạt động";
+      setError(message);
+      toast.warning(message);
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
       const act = await ensureActivityCreated();
       const payload = {
         activityId: act.id,
-        productId: Number(lineForm.productId),
-        quantity: Number(lineForm.quantity),
-        salePrice: Number(lineForm.salePrice),
+        productId,
+        quantity,
+        salePrice,
       };
       if (editingProductId !== null) {
         await activityDetailsApi.update(payload);
       } else {
         await activityDetailsApi.add(payload);
       }
+
+      const product = products.find((p) => p.id === payload.productId);
+      const nextLine: ActivityDetail = {
+        activityId: act.id,
+        productId: payload.productId,
+        productName: product?.productName ?? `#${payload.productId}`,
+        quantity: payload.quantity,
+        salePrice: payload.salePrice,
+        unitPrice: product?.unitPrice ?? 0,
+        lineTotal: payload.quantity * payload.salePrice,
+      };
+      setDetails((prev) => {
+        if (editingProductId !== null) {
+          return prev.map((line) =>
+            line.productId === editingProductId ? nextLine : line,
+          );
+        }
+        return [...prev, nextLine];
+      });
+
       setLineForm(emptyLineForm);
       setEditingProductId(null);
-      await load(act.id);
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Lưu dòng hàng thất bại");
+      const message = err instanceof Error ? err.message : "Lưu dòng hàng thất bại";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -419,7 +455,9 @@ export function ActivityDetailDialog({
       await load();
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Xóa thất bại");
+      const message = err instanceof Error ? err.message : "Xóa thất bại";
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -433,7 +471,9 @@ export function ActivityDetailDialog({
       await load(act.id);
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Xác nhận đơn thất bại");
+      const message = err instanceof Error ? err.message : "Xác nhận đơn thất bại";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -459,9 +499,10 @@ export function ActivityDetailDialog({
       await load();
       onChanged();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Chuyển trạng thái thất bại",
-      );
+      const message =
+        err instanceof Error ? err.message : "Chuyển trạng thái thất bại";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -480,7 +521,9 @@ export function ActivityDetailDialog({
         }),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "In hóa đơn thất bại");
+      const message = err instanceof Error ? err.message : "In hóa đơn thất bại";
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -567,6 +610,8 @@ export function ActivityDetailDialog({
                       }
                       placeholder="Chọn khách hàng"
                       searchPlaceholder="Tìm theo tên công ty, người đại diện, SĐT..."
+                      minQueryLength={0}
+                      maxVisibleOptions={3}
                     />
                   ) : (
                     <p className="text-sm font-medium">{customerName}</p>
@@ -594,27 +639,14 @@ export function ActivityDetailDialog({
                       }
                     />
                   ) : (
-                    <p className="text-sm">{activity.content}</p>
+                    <p className="text-sm">{activity.content ?? "—"}</p>
                   )}
                 </div>
               </div>
-              {isDraft && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={saving}
-                    onClick={() => void saveHeader()}
-                  >
-                    {activity.id === 0 ? "Lưu hoạt động" : "Lưu thông tin hoạt động"}
-                  </Button>
-                  {activity.id === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Chọn khách hàng và nội dung trước khi thêm sản phẩm, hoặc
-                      nhấn &quot;Lưu hoạt động&quot; để tạo đơn nháp.
-                    </p>
-                  )}
-                </>
+              {isDraft && activity.id === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Chọn khách hàng và nội dung trước khi thêm sản phẩm.
+                </p>
               )}
             </section>
 
@@ -641,6 +673,8 @@ export function ActivityDetailDialog({
                         disabled={editingProductId !== null}
                         placeholder="Chọn sản phẩm"
                         searchPlaceholder="Tìm theo tên sản phẩm..."
+                        minQueryLength={0}
+                        maxVisibleOptions={3}
                       />
                     </div>
                     <div className="grid gap-2">
@@ -659,7 +693,12 @@ export function ActivityDetailDialog({
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>Giá bán</Label>
+                      <div className="flex items-center justify-between gap-2">
+                        <Label>Giá bán</Label>
+                        <span className="text-xs text-muted-foreground">
+                          {formatAmountPreview(lineForm.salePrice)} đ
+                        </span>
+                      </div>
                       <Input
                         type="number"
                         min={0}
@@ -932,7 +971,12 @@ export function ActivityDetailDialog({
                       onSubmit={addPendingPayment}
                     >
                       <div className="grid gap-2">
-                        <Label>Số tiền thu</Label>
+                        <div className="flex items-center justify-between gap-2">
+                          <Label>Số tiền thu</Label>
+                          <span className="text-xs text-muted-foreground">
+                            Hiển thị: {formatAmountPreview(paymentForm.paidAmount)}
+                          </span>
+                        </div>
                         <Input
                           type="number"
                           min={1}

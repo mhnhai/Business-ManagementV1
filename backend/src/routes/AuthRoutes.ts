@@ -64,7 +64,12 @@ const reqValidators = {
  * @route GET /api/auth/check
  */
 function check(req: Req, res: Res) {
-  const token = req.cookies.accessToken as string | undefined;
+  const bearer =
+    typeof req.headers.authorization === 'string' &&
+    req.headers.authorization.startsWith('Bearer ')
+      ? req.headers.authorization.slice('Bearer '.length).trim()
+      : undefined;
+  const token = bearer ?? (req.cookies.accessToken as string | undefined);
   if (!token) {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Session not found');
   }
@@ -276,7 +281,12 @@ async function login(req: Req, res: Res) {
   res.cookie('accessToken', accessToken, { ...COOKIE_OPTIONS, maxAge: 15 * 60 * 1000 });
   res.cookie('refreshToken', refreshToken, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
 
-  return res.status(HttpStatusCodes.OK).json({ message: 'Login successfully' });
+  return res.status(HttpStatusCodes.OK).json({
+    message: 'Login successfully',
+    user: sessionUser,
+    accessToken,
+    refreshToken,
+  });
 }
 
 /**
@@ -284,7 +294,15 @@ async function login(req: Req, res: Res) {
  * @route GET /api/auth/refresh
  */
 async function refresh(req: Req, res: Res) {
-  const refreshToken = req.cookies.refreshToken as string | undefined;
+  const bodyToken =
+    typeof req.body === 'object' &&
+    req.body !== null &&
+    'refreshToken' in req.body &&
+    typeof (req.body as { refreshToken?: string }).refreshToken === 'string'
+      ? (req.body as { refreshToken: string }).refreshToken
+      : undefined;
+  const refreshToken =
+    bodyToken ?? (req.cookies.refreshToken as string | undefined);
 
   if (!refreshToken) {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'No refresh token provided');
@@ -314,7 +332,11 @@ async function refresh(req: Req, res: Res) {
 
   res.cookie('accessToken', newAccessToken, { ...COOKIE_OPTIONS, maxAge: 15 * 60 * 1000 });
 
-  return res.status(HttpStatusCodes.OK).json({ message: 'Token refreshed' });
+  return res.status(HttpStatusCodes.OK).json({
+    message: 'Token refreshed',
+    accessToken: newAccessToken,
+    user: sessionUser,
+  });
 }
 
 /**
@@ -322,7 +344,15 @@ async function refresh(req: Req, res: Res) {
  * @route GET /api/auth/logout
  */
 async function logout(req: Req, res: Res) {
-  const refreshToken = req.cookies.refreshToken as string | undefined;
+  const bodyToken =
+    typeof req.body === 'object' &&
+    req.body !== null &&
+    'refreshToken' in req.body &&
+    typeof (req.body as { refreshToken?: string }).refreshToken === 'string'
+      ? (req.body as { refreshToken: string }).refreshToken
+      : undefined;
+  const refreshToken =
+    bodyToken ?? (req.cookies.refreshToken as string | undefined);
   if (refreshToken) {
     await AuthRepo.deleteToken(refreshToken);
   }

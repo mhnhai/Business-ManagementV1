@@ -85,6 +85,43 @@ async function getAll(): Promise<IUserPublic[]> {
   return rows.map(row => userModel.toPublic(toUser(row)));
 }
 
+async function getPage(
+  page: number,
+  pageSize: number,
+  search?: string,
+): Promise<{ items: IUserPublic[]; total: number }> {
+  const keyword = search?.trim();
+  const where = {
+    deleted_at: null,
+    is_activated: true,
+    ...(keyword
+      ? {
+          OR: [
+            { username: { contains: keyword, mode: 'insensitive' as const } },
+            { full_name: { contains: keyword, mode: 'insensitive' as const } },
+            { department: { contains: keyword, mode: 'insensitive' as const } },
+            { email: { contains: keyword, mode: 'insensitive' as const } },
+            { phone_number: { contains: keyword, mode: 'insensitive' as const } },
+            ...(Number.isFinite(Number(keyword))
+              ? [{ user_id: Number(keyword) }]
+              : []),
+          ],
+        }
+      : {}),
+  };
+  const skip = (page - 1) * pageSize;
+  const [rows, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      orderBy: { user_id: 'asc' },
+      skip,
+      take: pageSize,
+    }),
+    prisma.user.count({ where }),
+  ]);
+  return { items: rows.map((row) => userModel.toPublic(toUser(row))), total };
+}
+
 async function getAllUnactivated(): Promise<IUserPublic[]> {
   const rows = await prisma.user.findMany({
     where: { 
@@ -942,6 +979,7 @@ export default {
   getOneByEmail,
   persists,
   getAll,
+  getPage,
   getAllUnactivated,
   search,
   add,

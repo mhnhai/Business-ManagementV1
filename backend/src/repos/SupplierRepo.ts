@@ -18,6 +18,39 @@ async function getAll(): Promise<ISupplier[]> {
   return rows.map(toSupplier);
 }
 
+async function getPage(
+  page: number,
+  pageSize: number,
+  search?: string,
+): Promise<{ items: ISupplier[]; total: number }> {
+  const skip = (page - 1) * pageSize;
+  const keyword = search?.trim();
+  const where = keyword
+    ? {
+        OR: [
+          { supplier_name: { contains: keyword, mode: 'insensitive' as const } },
+          { business_type: { contains: keyword, mode: 'insensitive' as const } },
+          { address: { contains: keyword, mode: 'insensitive' as const } },
+          { phone_number: { contains: keyword, mode: 'insensitive' as const } },
+          { email: { contains: keyword, mode: 'insensitive' as const } },
+          ...(Number.isFinite(Number(keyword))
+            ? [{ supplier_id: Number(keyword) }]
+            : []),
+        ],
+      }
+    : undefined;
+  const [rows, total] = await Promise.all([
+    prisma.supplier.findMany({
+      orderBy: { supplier_id: 'asc' },
+      where,
+      skip,
+      take: pageSize,
+    }),
+    prisma.supplier.count({ where }),
+  ]);
+  return { items: rows.map(toSupplier), total };
+}
+
 async function add(supplier: ISupplierWrite): Promise<ISupplier> {
   const row = await prisma.supplier.create({
     data: supplierToPrismaData(supplier),
@@ -45,6 +78,7 @@ export default {
   getOne,
   persists,
   getAll,
+  getPage,
   add,
   update,
   delete: delete_,

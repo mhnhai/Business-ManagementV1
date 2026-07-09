@@ -42,6 +42,57 @@ async function getAll(): Promise<ISalaryWithUser[]> {
   }));
 }
 
+async function getPage(
+  page: number,
+  pageSize: number,
+  filters?: { month?: number; year?: number },
+): Promise<{ items: ISalaryWithUser[]; total: number }> {
+  const skip = (page - 1) * pageSize;
+  const where = {
+    ...(filters?.month ? { month: filters.month } : {}),
+    ...(filters?.year ? { year: filters.year } : {}),
+  };
+  const [rows, total] = await Promise.all([
+    prisma.salary.findMany({
+      include: {
+        user: {
+          include: {
+            bank_account: true,
+          },
+        },
+      },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+      where,
+      skip,
+      take: pageSize,
+    }),
+    prisma.salary.count({ where }),
+  ]);
+
+  const items = rows.map((row) => ({
+    id: row.salary_id,
+    userId: row.user_id,
+    month: row.month,
+    year: row.year,
+    baseSalary: Number(row.base_salary),
+    commission: Number(row.commission),
+    bonus: Number(row.bonus),
+    isPaid: !!row.is_paid,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    user: row.user ? {
+      username: row.user.username,
+      fullName: row.user.full_name,
+      department: row.user.department,
+      email: row.user.email,
+      phoneNumber: row.user.phone_number,
+      role: row.user.role,
+    } : null,
+  }));
+
+  return { items, total };
+}
+
 /**
  * Get a single salary record by its ID.
  */
@@ -261,6 +312,7 @@ async function deleteAll(): Promise<void> {
 
 export default {
   getAll,
+  getPage,
   getOne,
   persists,
   getByUserId,

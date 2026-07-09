@@ -169,6 +169,7 @@ const authRouter = Router();
 authRouter.post(Paths.Auth.Login, rateLimiters.auth, AuthRoutes.login);
 authRouter.post(Paths.Auth.Refresh, rateLimiters.default, AuthRoutes.refresh);
 authRouter.get(Paths.Auth.Logout, rateLimiters.default, AuthRoutes.logout);
+authRouter.post(Paths.Auth.Logout, rateLimiters.default, AuthRoutes.logout);
 authRouter.post(Paths.Auth.Register, rateLimiters.auth, AuthRoutes.register);
 authRouter.get(Paths.Auth.Check, rateLimiters.default, AuthRoutes.check);
 authRouter.get(Paths.Auth.VerifyEmail, rateLimiters.default, AuthRoutes.verifyEmail);

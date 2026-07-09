@@ -19,7 +19,8 @@ import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { authApi } from "@/lib/api";
-import { useAuth } from "@/lib/auth-context";
+import { getAuthTokens } from "@/lib/auth-tokens";
+import { signOut, useAuth } from "@/lib/auth-context";
 import { sectionsForRole } from "@/lib/permissions";
 import { useEffect, useState } from "react";
 
@@ -97,18 +98,14 @@ export function AppShell({
   onSectionChange,
 }: AppShellProps) {
   const router = useRouter();
-  const { user, isLoading, refresh, clearUser } = useAuth();
+  const { user, isLoading, clearUser } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
 
   useEffect(() => {
     if (!isLoading && user && user.role !== "admin") {
       onSectionChange("user-dashboard");
     }
-  }, [user, isLoading, onSectionChange]);
+  }, [user?.userId, user?.role, isLoading, onSectionChange]);
 
   if (isLoading) {
     return (
@@ -127,13 +124,19 @@ export function AppShell({
   };
 
   const handleLogoutClick = async () => {
+    const { refreshToken } = getAuthTokens();
     try {
-      await authApi.logout();
+      if (refreshToken) {
+        await authApi.logout(refreshToken);
+      }
     } catch (error) {
-      console.warn("Không thể xóa token trên server (có thể DB đã reset), tiến hành xóa dữ liệu cục bộ:", error);
+      console.warn(
+        "Không thể xóa token trên server (có thể DB đã reset), tiến hành xóa dữ liệu cục bộ:",
+        error,
+      );
     } finally {
       clearUser();
-      router.push("/auth");
+      await signOut({ callbackUrl: "/auth" });
     }
   };
 

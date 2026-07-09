@@ -78,6 +78,94 @@ async function getAllWithPaymentInfo(
   });
 }
 
+async function getPageWithPaymentInfo(
+  page: number,
+  pageSize: number,
+  userId?: number,
+  filters?: {
+    search?: string;
+    status?: string;
+    debt?: string;
+    fromDate?: string;
+    toDate?: string;
+  },
+): Promise<{ items: IActivityListItem[]; total: number }> {
+  const keyword = filters?.search?.trim();
+  const from = filters?.fromDate ? new Date(`${filters.fromDate}T00:00:00`) : undefined;
+  const to = filters?.toDate ? new Date(`${filters.toDate}T23:59:59.999`) : undefined;
+  const where = {
+    ...(userId !== undefined ? { user_id: userId } : {}),
+    ...(filters?.status && filters.status !== 'all' ? { status: filters.status } : {}),
+    ...(filters?.debt === 'debt'
+      ? { invoice_id: { not: null }, payment_status: { not: 'paid' } }
+      : {}),
+    ...(filters?.debt === 'paid'
+      ? { invoice_id: { not: null }, payment_status: 'paid' }
+      : {}),
+    ...(from || to
+      ? {
+          activity_date: {
+            ...(from ? { gte: from } : {}),
+            ...(to ? { lte: to } : {}),
+          },
+        }
+      : {}),
+    ...(keyword
+      ? {
+          OR: [
+            { content: { contains: keyword, mode: 'insensitive' as const } },
+            { status: { contains: keyword, mode: 'insensitive' as const } },
+            { customer: { company_name: { contains: keyword, mode: 'insensitive' as const } } },
+            { user: { full_name: { contains: keyword, mode: 'insensitive' as const } } },
+            ...(Number.isFinite(Number(keyword))
+              ? [{ activity_id: Number(keyword) }]
+              : []),
+          ],
+        }
+      : {}),
+  };
+  const skip = (page - 1) * pageSize;
+  const [rows, total] = await Promise.all([
+    prisma.activity.findMany({
+      where,
+      include: {
+        invoice: { select: { total_amount: true } },
+        payments: { select: { paid_amount: true } },
+      },
+      orderBy: [{ created_at: 'desc' }, { activity_id: 'desc' }],
+      skip,
+      take: pageSize,
+    }),
+    prisma.activity.count({ where }),
+  ]);
+
+  const items = rows.map((row) => {
+    const activity = toActivity(row);
+    const invoice = row.invoice as { total_amount: unknown } | null;
+    const payments = row.payments as Array<{ paid_amount: unknown }>;
+    const invoiceTotal = invoice ? Number(invoice.total_amount) : 0;
+    const paidTotal = payments.reduce(
+      (sum, p) => sum + Number(p.paid_amount),
+      0,
+    );
+    const remaining =
+      row.invoice_id != null
+        ? Math.max(0, invoiceTotal - paidTotal)
+        : 0;
+    const paymentStatus = resolvePaymentStatus(paidTotal, invoiceTotal);
+
+    return {
+      ...activity,
+      invoiceTotal,
+      paidTotal,
+      remaining,
+      paymentStatusLabel: PaymentStatusLabels[paymentStatus],
+    };
+  });
+
+  return { items, total };
+}
+
 async function addDraft(input: IActivityWrite): Promise<IActivity> {
   const row = await prisma.activity.create({
     data: {
@@ -177,6 +265,7 @@ export default {
   getByInvoiceId,
   getAll,
   getAllWithPaymentInfo,
+  getPageWithPaymentInfo,
   getForExport,
   addDraft,
   update,

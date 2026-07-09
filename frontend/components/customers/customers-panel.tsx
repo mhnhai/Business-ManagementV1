@@ -19,13 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ListSearchBar } from "@/components/ui/list-search-bar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Table,
   TableBody,
@@ -36,9 +30,7 @@ import {
 } from "@/components/ui/table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ListTableShell } from "@/components/ui/list-table-shell";
-import { usePagination } from "@/hooks/use-pagination";
-import { listCol, listCell } from "@/lib/list-table-layout";
-import { matchesAnySearchField } from "@/lib/list-search";
+import { listCol, listCell, listHead } from "@/lib/list-table-layout";
 import { FieldScanDialog } from "./customer-scan-dialog";
 
 const emptyForm = {
@@ -78,6 +70,10 @@ export function CustomersPanel() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Trạng thái cho Bản đồ nhỏ ghim điểm
   const [innerMapOpen, setInnerMapOpen] = useState(false);
@@ -93,59 +89,43 @@ export function CustomersPanel() {
       ),
     [locations],
   );
-
-  const filteredCustomers = useMemo(
+  const locationOptions = useMemo(
     () =>
-      customers.filter((customer) =>
-        matchesAnySearchField(
-          [
-            customer.id,
-            customer.companyName,
-            customer.businessType,
-            customer.representativeName,
-            customer.position,
-            customer.phoneNumber,
-            customer.currentBalance,
-            locationMap[customer.locationId],
-            customer.locationId,
-            customer.lat,
-            customer.lng,
-          ],
-          searchQuery,
-        ),
-      ),
-    [customers, locationMap, searchQuery],
+      locations.map((loc) => ({
+        value: String(loc.id),
+        label: locationLabel(loc),
+        keywords: `${loc.ward} ${loc.province}`,
+      })),
+    [locations],
   );
 
-  const {
-    page,
-    setPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    paginatedItems: paginatedCustomers,
-  } = usePagination(filteredCustomers, undefined, searchQuery);
+  const filteredCustomers = customers;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (targetPage = page, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
       const [customerList, locationList] = await Promise.all([
-        customersApi.getAll(),
+        customersApi.getPage(targetPage, pageSize, {
+          search: search.trim() || undefined,
+        }),
         locationsApi.getAll(),
       ]);
       let pendingCustomers: Customer[] = [];
-      if(isAdmin)
+      if (isAdmin && targetPage === 1)
         pendingCustomers = await customersApi.getPendingApproval(); 
 
-      setCustomers([...pendingCustomers, ...customerList]);
+      setCustomers([...pendingCustomers, ...customerList.items]);
+      setTotalItems(customerList.total + pendingCustomers.length);
+      setTotalPages(Math.max(1, Math.ceil((customerList.total + pendingCustomers.length) / pageSize)));
+      setPage(customerList.page);
       setLocations(locationList);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không tải được dữ liệu");
     } finally {
       setLoading(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, page, searchQuery]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -285,8 +265,8 @@ export function CustomersPanel() {
       companyName: customer.companyName,
       businessType: customer.businessType,
       representativeName: customer.representativeName,
-      position: customer.position,
-      phoneNumber: customer.phoneNumber,
+      position: customer.position ?? "",
+      phoneNumber: customer.phoneNumber ?? "",
       currentBalance: String(customer.currentBalance),
       lat: customer.lat ? String(customer.lat) : "",
       lng: customer.lng ? String(customer.lng) : "",
@@ -306,11 +286,11 @@ export function CustomersPanel() {
         companyName: form.companyName,
         businessType: form.businessType,
         representativeName: form.representativeName,
-        position: form.position,
-        phoneNumber: form.phoneNumber,
+        position: form.position.trim() ? form.position.trim() : null,
+        phoneNumber: form.phoneNumber.trim() ? form.phoneNumber.trim() : null,
         currentBalance: Number(form.currentBalance),
-        lat: form.lat ? Number(form.lat) : undefined,
-        lng: form.lng ? Number(form.lng) : undefined,
+        lat: form.lat ? Number(form.lat) : null,
+        lng: form.lng ? Number(form.lng) : null,
         isApproved: isAdmin ? form.isApproved : false,
       };
       if (form.id === 0) {
@@ -356,7 +336,10 @@ export function CustomersPanel() {
         <div className="flex flex-wrap items-center gap-2">
           <ListSearchBar
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={(value) => {
+              setSearchQuery(value);
+              void load(1, value);
+            }}
             placeholder="Tìm theo công ty, người đại diện, SĐT, địa điểm..."
           />
           <div className="flex flex-wrap gap-2 sm:ml-auto">
@@ -417,59 +400,81 @@ export function CustomersPanel() {
                 totalPages={totalPages}
                 totalItems={totalItems}
                 pageSize={pageSize}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => {
+                  setPage(nextPage);
+                  void load(nextPage);
+                }}
               />
             }
           >
-          <Table className="min-w-[1080px]">
+          <Table className="min-w-[1180px]">
             <TableHeader>
               <TableRow>
-                <TableHead className={listCol.id}>ID</TableHead>
-                <TableHead className={listCol.name}>Công ty</TableHead>
-                <TableHead className={listCol.type}>Loại hình</TableHead>
-                <TableHead>Người đại diện</TableHead>
-                <TableHead className={listCol.phone}>SĐT</TableHead>
-                <TableHead className={listCol.balance}>Số dư</TableHead>
-                <TableHead>Địa điểm</TableHead>
-                <TableHead className={listCol.coords}>Tọa độ</TableHead>
-                {isAdmin && <TableHead className={listCol.status}>Trạng thái</TableHead>}
-                <TableHead className={listCol.actions}>Thao tác</TableHead>
+                <TableHead className={`${listCol.id} ${listHead.center}`}>ID</TableHead>
+                <TableHead className="w-[156px]">Công ty</TableHead>
+                <TableHead className="w-[100px]">Loại hình</TableHead>
+                <TableHead className={listCol.representative}>Người đại diện</TableHead>
+                <TableHead className={`${listCol.phone} ${listHead.center}`}>SĐT</TableHead>
+                <TableHead className={`${listCol.balance} ${listHead.right}`}>Số dư</TableHead>
+                <TableHead className={listCol.location}>Địa điểm</TableHead>
+                <TableHead className="w-[108px]">Tọa độ</TableHead>
+                {isAdmin && (
+                  <TableHead className={`${listCol.status} ${listHead.center}`}>
+                    Trạng thái
+                  </TableHead>
+                )}
+                <TableHead
+                  className={`${isAdmin ? listCol.actionsWide : listCol.actions} ${listHead.center}`}
+                >
+                  Thao tác
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedCustomers.map((customer) => (
+              {filteredCustomers.map((customer) => (
                 <TableRow key={customer.id}>
-                  <TableCell className={listCell.nowrap}>{customer.id}</TableCell>
+                  <TableCell className={listCell.center}>{customer.id}</TableCell>
                   <TableCell className={`font-medium ${listCell.truncate}`}>
                     <button
                       type="button"
                       className="truncate text-left hover:underline"
+                      title={customer.companyName}
                       onClick={() => openDetail(customer)}
                     >
                       {customer.companyName}
                     </button>
                   </TableCell>
-                  <TableCell className={listCell.truncate}>{customer.businessType}</TableCell>
+                  <TableCell className={listCell.truncate} title={customer.businessType}>
+                    {customer.businessType}
+                  </TableCell>
                   <TableCell className={listCell.truncate}>
-                    {customer.representativeName}
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {customer.position}
+                    <span className="block truncate" title={customer.representativeName}>
+                      {customer.representativeName}
+                    </span>
+                    <span
+                      className="block truncate text-xs text-muted-foreground"
+                      title={customer.position ?? "---"}
+                    >
+                      {customer.position ?? "---"}
                     </span>
                   </TableCell>
-                  <TableCell className={listCell.nowrap}>{customer.phoneNumber}</TableCell>
+                  <TableCell className={listCell.center}>{customer.phoneNumber ?? "---"}</TableCell>
                   <TableCell className={listCell.money}>{formatMoney(customer.currentBalance)}</TableCell>
-                  <TableCell className={`text-sm ${listCell.truncate}`}>
+                  <TableCell className={`text-sm ${listCell.truncate}`} title={locationMap[customer.locationId] ?? String(customer.locationId)}>
                     {locationMap[customer.locationId] ?? customer.locationId}
                   </TableCell>
-                  <TableCell className={`text-xs text-muted-foreground ${listCell.nowrap}`}>
+                  <TableCell className={`text-xs text-muted-foreground ${listCell.truncate}`}>
                     {customer.lat && customer.lng ? (
-                      <span>{customer.lat}, {customer.lng}</span>
+                      <span title={`${customer.lat}, ${customer.lng}`}>
+                        {customer.lat}, {customer.lng}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground/50">---</span>
                     )}
                   </TableCell>
                   {isAdmin && (
-                    <TableCell>
+                    <TableCell className={listCell.status}>
+                      <div className="flex justify-center">
                       {customer.isApproved ? (
                         <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
                           Đã duyệt
@@ -479,13 +484,16 @@ export function CustomersPanel() {
                           Chờ duyệt
                         </span>
                       )}
+                      </div>
                     </TableCell>
                   )}
-                  <TableCell className={listCell.actions}>
+                  <TableCell className={listCell.actionsCenter}>
+                    <div className="flex flex-nowrap items-center justify-center gap-0">
                     {isAdmin && !customer.isApproved && (
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-8 w-8 shrink-0 p-0"
                         title="Phê duyệt"
                         onClick={() => void handleApprove(customer.id)}
                       >
@@ -495,6 +503,7 @@ export function CustomersPanel() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="h-8 w-8 shrink-0 p-0"
                       title="Xem chi tiết"
                       onClick={() => openDetail(customer)}
                     >
@@ -505,6 +514,7 @@ export function CustomersPanel() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="h-8 w-8 shrink-0 p-0"
                           title="Sửa"
                           onClick={() => openEdit(customer)}
                         >
@@ -513,6 +523,7 @@ export function CustomersPanel() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="h-8 w-8 shrink-0 p-0"
                           title="Xóa"
                           onClick={() => void handleDelete(customer.id)}
                         >
@@ -520,6 +531,7 @@ export function CustomersPanel() {
                         </Button>
                       </>
                     )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -554,23 +566,19 @@ export function CustomersPanel() {
           <form className="grid gap-4" onSubmit={(e) => void handleSubmit(e)}>
             <div className="grid gap-2">
               <Label>Địa điểm (Khu vực quản lý)</Label>
-              <Select
+              <SearchableSelect
+                options={locationOptions}
                 value={form.locationId}
                 onValueChange={(v) =>
                   setForm((f) => ({ ...f, locationId: v }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn địa điểm" />
-                </SelectTrigger>
-                <SelectContent>
-                  {locations.map((loc) => (
-                    <SelectItem key={loc.id} value={String(loc.id)}>
-                      {locationLabel(loc)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Chọn địa điểm"
+                searchPlaceholder="Tìm địa điểm..."
+                emptyMessage="Không tìm thấy địa điểm"
+                minQueryLength={0}
+                maxVisibleOptions={3}
+                disabled={locations.length === 0}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="companyName">Tên công ty / Đại lý</Label>
@@ -614,7 +622,6 @@ export function CustomersPanel() {
                 <Label htmlFor="position">Chức vụ</Label>
                 <Input
                   id="position"
-                  required
                   value={form.position}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, position: e.target.value }))
@@ -627,7 +634,6 @@ export function CustomersPanel() {
                 <Label htmlFor="phoneNumber">Số điện thoại</Label>
                 <Input
                   id="phoneNumber"
-                  required
                   placeholder="Nhập số điện thoại liên hệ"
                   value={form.phoneNumber}
                   onChange={(e) =>
@@ -658,7 +664,6 @@ export function CustomersPanel() {
                     id="lat"
                     type="number"
                     step="any"
-                    required
                     placeholder="Vĩ độ (Lat)"
                     value={form.lat}
                     onChange={(e) =>
@@ -669,7 +674,6 @@ export function CustomersPanel() {
                     id="lng"
                     type="number"
                     step="any"
-                    required
                     placeholder="Kinh độ (Lng)"
                     value={form.lng}
                     onChange={(e) =>

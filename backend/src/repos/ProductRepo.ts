@@ -22,6 +22,35 @@ async function getAll(): Promise<IProduct[]> {
   return rows.map(toProduct);
 }
 
+async function getPage(
+  page: number,
+  pageSize: number,
+  search?: string,
+): Promise<{ items: IProduct[]; total: number }> {
+  const skip = (page - 1) * pageSize;
+  const keyword = search?.trim();
+  const where = keyword
+    ? {
+        OR: [
+          { product_name: { contains: keyword, mode: 'insensitive' as const } },
+          ...(Number.isFinite(Number(keyword))
+            ? [{ product_id: Number(keyword) }]
+            : []),
+        ],
+      }
+    : undefined;
+  const [rows, total] = await Promise.all([
+    prisma.product.findMany({
+      orderBy: { product_id: 'asc' },
+      where,
+      skip,
+      take: pageSize,
+    }),
+    prisma.product.count({ where }),
+  ]);
+  return { items: rows.map(toProduct), total };
+}
+
 async function add(product: IProductWrite): Promise<IProduct> {
   const row = await prisma.product.create({
     data: productToPrismaData(product),
@@ -49,6 +78,7 @@ export default {
   getOne,
   persists,
   getAll,
+  getPage,
   add,
   update,
   delete: delete_,

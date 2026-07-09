@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.20.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-select": "^2.2.6",
@@ -20,8 +21,10 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^1.16.0",
     "next": "16.2.4",
+    "next-auth": "^5.0.0-beta.31",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-toastify": "^11.1.0",
     "recharts": "^3.8.1",
     "tailwind-merge": "^3.6.0"
   },

@@ -21,6 +21,7 @@ type SearchableSelectProps = {
   disabled?: boolean;
   emptyMessage?: string;
   minQueryLength?: number;
+  maxVisibleOptions?: number;
 };
 
 export function SearchableSelect({
@@ -32,6 +33,7 @@ export function SearchableSelect({
   disabled = false,
   emptyMessage = "Không có kết quả",
   minQueryLength = 1,
+  maxVisibleOptions = 6,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -98,7 +100,10 @@ export function SearchableSelect({
         />
       </div>
       {open && (
-        <ul className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border bg-popover py-1 shadow-md">
+        <ul
+          className="absolute z-50 mt-1 w-full overflow-auto rounded-md border bg-popover py-1 shadow-md"
+          style={{ maxHeight: `${maxVisibleOptions * 40}px` }}
+        >
           {query.trim().length < minQueryLength ? (
             <li className="px-3 py-2 text-sm text-muted-foreground">
               Nhập ít nhất {minQueryLength} ký tự để tìm

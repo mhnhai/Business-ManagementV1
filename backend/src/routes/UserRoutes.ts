@@ -18,6 +18,7 @@ import {
 import { parseStatsPeriodQuery } from '@src/common/utils/stats-period';
 import type { SellerScope } from '@src/repos/UserRepo';
 import { NextFunction } from 'express';
+import { parsePaginationQuery } from './common/pagination';
 
 /******************************************************************************
                                    Constants
@@ -123,10 +124,22 @@ async function getOne(req: Req, res: Res, next: NextFunction) {
  * Get all users.
  * @route GET /api/users/all
  */
-async function getAll(_: Req, res: Res, next: NextFunction) {
+async function getAll(req: Req, res: Res, next: NextFunction) {
   try {
-    const users = await UserService.getAll();
-    return res.status(HttpStatusCodes.OK).json({ users });
+    const pagination = parsePaginationQuery(req.query, 10);
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    if (!pagination.enabled) {
+      const users = await UserService.getAll();
+      return res.status(HttpStatusCodes.OK).json({ users });
+    }
+
+    const result = await UserService.getPage(pagination.page, pagination.pageSize, search);
+    return res.status(HttpStatusCodes.OK).json({
+      users: result.items,
+      total: result.total,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+    });
   } catch (error) {
     return next(error);
   }

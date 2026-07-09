@@ -8,6 +8,10 @@ async function getAll() {
   return ProductRepo.getAll();
 }
 
+async function getPage(page: number, pageSize: number, search?: string) {
+  return ProductRepo.getPage(page, pageSize, search);
+}
+
 async function getOne(id: number) {
   const product = await ProductRepo.getOne(id);
   if (!product) {
@@ -43,6 +47,7 @@ async function deleteOne(id: number): Promise<void> {
 export default {
   Errors,
   getAll,
+  getPage,
   getOne,
   addOne,
   updateOne,

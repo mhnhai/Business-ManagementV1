@@ -280,7 +280,7 @@ export function activityWriteToPrismaData(input: IActivityWrite) {
   return {
     user_id: input.userId,
     customer_id: input.customerId,
-    content: input.content,
+    content: input.content ?? null,
   };
 }
 
@@ -335,7 +335,7 @@ export function toImport(row: Import): IImport {
 export function importWriteToPrismaData(input: IImportWrite) {
   return {
     supplier_id: input.supplierId,
-    content: input.content,
+    content: input.content ?? null,
   };
 }
 

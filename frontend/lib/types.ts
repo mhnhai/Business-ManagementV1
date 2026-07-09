@@ -73,7 +73,7 @@ export interface Activity {
 
   deliveryDate: string | null;
 
-  content: string;
+  content: string | null;
 
   createdAt: string;
 
@@ -94,7 +94,7 @@ export interface ActivityWrite {
 
   customerId: number;
 
-  content: string;
+  content: string | null;
 
 }
 
@@ -145,14 +145,14 @@ export interface Supplier {
 
 export interface ImportWrite {
   supplierId: number;
-  content: string;
+  content: string | null;
 }
 
 export interface Import {
   id: number;
   supplierId: number;
   importDate: string;
-  content: string;
+  content: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -273,15 +273,15 @@ export interface Customer {
 
   representativeName: string;
 
-  position: string;
+  position: string | null;
 
-  phoneNumber: string;
+  phoneNumber: string | null;
 
   currentBalance: number;
 
-  lat?: number;     
+  lat?: number | null;
 
-  lng?: number;      
+  lng?: number | null;
 
   isApproved: boolean; 
   

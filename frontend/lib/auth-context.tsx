@@ -1,16 +1,16 @@
 "use client";
 
+import { SessionProvider, signOut, useSession } from "next-auth/react";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from "react";
 
-import { authApi } from "@/lib/api";
+import { setAuthTokens } from "@/lib/auth-tokens";
 import { isAdmin } from "@/lib/permissions";
 
 export interface SessionUser {
@@ -29,45 +29,69 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+function AuthTokenSync({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession();
 
-  const refresh = useCallback(async () => {
-    try {
-      const data = await authApi.check();
-      const u = data.user as SessionUser;
-      if (u?.userId != null && u?.username && u?.role) {
-        setUser(u);
-      } else {
-        setUser(null);
-      }
-    } catch {
-      setUser(null);
-    }
-  }, []);
+  if (session?.accessToken && session?.refreshToken) {
+    setAuthTokens(session.accessToken, session.refreshToken);
+  } else if (status === "unauthenticated") {
+    setAuthTokens(null, null);
+  }
 
   useEffect(() => {
-    void (async () => {
-      setIsLoading(true);
-      await refresh();
-      setIsLoading(false);
-    })();
-  }, [refresh]);
+    if (session?.error === "RefreshAccessTokenError") {
+      void signOut({ callbackUrl: "/auth" });
+    }
+  }, [session?.error]);
+
+  return <>{children}</>;
+}
+
+function AuthContextBridge({ children }: { children: ReactNode }) {
+  const { data: session, status, update } = useSession();
+
+  const user = useMemo((): SessionUser | null => {
+    if (session?.user?.userId == null || !session.user.role) {
+      return null;
+    }
+    return {
+      userId: session.user.userId,
+      username: session.user.username ?? session.user.name ?? "",
+      role: session.user.role,
+    };
+  }, [session]);
+
+  const refresh = useCallback(async () => {
+    await update();
+  }, [update]);
+
+  const clearUser = useCallback(() => {
+    setAuthTokens(null, null);
+  }, []);
 
   const value = useMemo(
     () => ({
       user,
-      isLoading,
+      isLoading: status === "loading",
       isAdmin: isAdmin(user?.role),
       refresh,
-      clearUser: () => setUser(null),
+      clearUser,
     }),
-    [user, isLoading, refresh],
+    [user, status, refresh, clearUser],
   );
 
   return (
     <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  );
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return (
+    <SessionProvider>
+      <AuthTokenSync>
+        <AuthContextBridge>{children}</AuthContextBridge>
+      </AuthTokenSync>
+    </SessionProvider>
   );
 }
 
@@ -78,3 +102,5 @@ export function useAuth(): AuthContextValue {
   }
   return ctx;
 }
+
+export { signOut };

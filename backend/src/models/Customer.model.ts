@@ -12,6 +12,7 @@ import { transformIsDate } from '@src/common/utils/validators';
 import { AutoCreatePayload, Entity } from './common/types';
 
 const isNullableNumber = makeNullable(isNumber);
+const isNullableString = makeNullable(isString);
 
 function isNullableApprovedAt(val: unknown): val is Date | null {
   if (val === null || val === undefined) return true;
@@ -34,8 +35,8 @@ export interface ICustomer extends Entity {
   companyName: string;
   businessType: string;
   representativeName: string;
-  position: string;
-  phoneNumber: string;
+  position: string | null;
+  phoneNumber: string | null;
   currentBalance: number;
   lat: number | null;
   lng: number | null;
@@ -59,8 +60,8 @@ const GetDefaults = (): ICustomer => ({
   companyName: '',
   businessType: '',
   representativeName: '',
-  position: '',
-  phoneNumber: '',
+  position: null,
+  phoneNumber: null,
   currentBalance: 0,
   lat: null,
   lng: null,
@@ -76,8 +77,8 @@ const schema = {
   companyName: isString,
   businessType: isString,
   representativeName: isString,
-  position: isString,
-  phoneNumber: isString,
+  position: isNullableString,
+  phoneNumber: isNullableString,
   currentBalance: isNumber,
   lat: isNullableNumber,
   lng: isNullableNumber,
@@ -92,8 +93,8 @@ const writeSchema = {
   companyName: isString,
   businessType: isString,
   representativeName: isString,
-  position: isString,
-  phoneNumber: isString,
+  position: isNullableString,
+  phoneNumber: isNullableString,
   currentBalance: isNumber,
   lat: isNullableNumber,
   lng: isNullableNumber,
@@ -107,8 +108,8 @@ const updateSchema = {
   companyName: isString,
   businessType: isString,
   representativeName: isString,
-  position: isString,
-  phoneNumber: isString,
+  position: isNullableString,
+  phoneNumber: isNullableString,
   currentBalance: isNumber,
   lat: isNullableNumber,
   lng: isNullableNumber,
@@ -130,8 +131,6 @@ const isCompleteCustomer = testObject<ICustomer>({
   companyName: isNonEmptyString,
   businessType: isNonEmptyString,
   representativeName: isNonEmptyString,
-  position: isNonEmptyString,
-  phoneNumber: isNonEmptyString,
   currentBalance: isNumber,
   isApproved: isBoolean,
 });
@@ -142,8 +141,6 @@ const isCompleteCustomerWrite = testObject<ICustomerWrite>({
   companyName: isNonEmptyString,
   businessType: isNonEmptyString,
   representativeName: isNonEmptyString,
-  position: isNonEmptyString,
-  phoneNumber: isNonEmptyString,
   currentBalance: isNumber,
   isApproved: isBoolean,
 });
@@ -154,8 +151,6 @@ const isCompleteCustomerUpdate = testObject<ICustomerUpdate>({
   companyName: isNonEmptyString,
   businessType: isNonEmptyString,
   representativeName: isNonEmptyString,
-  position: isNonEmptyString,
-  phoneNumber: isNonEmptyString,
   currentBalance: isNumber,
   isApproved: isBoolean,
 });
@@ -179,8 +174,8 @@ function newWrite(customer?: Partial<ICustomerWrite>): ICustomerWrite {
       companyName: '',
       businessType: '',
       representativeName: '',
-      position: '',
-      phoneNumber: '',
+      position: null,
+      phoneNumber: null,
       currentBalance: 0,
       lat: null,
       lng: null,
@@ -204,8 +199,8 @@ function newUpdate(customer?: Partial<ICustomerUpdate>): ICustomerUpdate {
       companyName: '',
       businessType: '',
       representativeName: '',
-      position: '',
-      phoneNumber: '',
+      position: null,
+      phoneNumber: null,
       currentBalance: 0,
       lat: null,
       lng: null,

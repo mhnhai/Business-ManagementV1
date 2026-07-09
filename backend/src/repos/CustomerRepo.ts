@@ -33,6 +33,43 @@ async function getAll(locationIds?: number[]): Promise<ICustomer[]> {
   return rows.map(toCustomer);
 }
 
+async function getPage(
+  page: number,
+  pageSize: number,
+  locationIds?: number[],
+  search?: string,
+): Promise<{ items: ICustomer[]; total: number }> {
+  const keyword = search?.trim();
+  const where = {
+    is_approved: true,
+    ...(locationIds !== undefined ? { location_id: { in: locationIds } } : {}),
+    ...(keyword
+      ? {
+          OR: [
+            { company_name: { contains: keyword, mode: 'insensitive' as const } },
+            { business_type: { contains: keyword, mode: 'insensitive' as const } },
+            { representative_name: { contains: keyword, mode: 'insensitive' as const } },
+            { phone_number: { contains: keyword, mode: 'insensitive' as const } },
+            ...(Number.isFinite(Number(keyword))
+              ? [{ customer_id: Number(keyword) }]
+              : []),
+          ],
+        }
+      : {}),
+  };
+  const skip = (page - 1) * pageSize;
+  const [rows, total] = await Promise.all([
+    prisma.customer.findMany({
+      where,
+      orderBy: { customer_id: 'asc' },
+      skip,
+      take: pageSize,
+    }),
+    prisma.customer.count({ where }),
+  ]);
+  return { items: rows.map(toCustomer), total };
+}
+
 async function getOneInTerritory(
   id: number,
   locationIds?: number[],
@@ -98,6 +135,7 @@ export default {
   getOneInTerritory,
   persists,
   getAll,
+  getPage,
   getPendingApproval, 
   getNearby,        
   add,

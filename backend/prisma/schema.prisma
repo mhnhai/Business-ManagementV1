@@ -128,8 +128,8 @@ model Customer {
   company_name        String     @db.VarChar(50)
   business_type       String     @db.VarChar(50)
   representative_name String     @db.VarChar(50)
-  position            String     @db.VarChar(50)
-  phone_number        String     @db.VarChar(10)
+  position            String?    @db.VarChar(50)
+  phone_number        String?    @db.VarChar(10)
   current_balance     Decimal    @default(0) @db.Decimal(15, 2)
   
   lat                 Float?     
@@ -182,7 +182,7 @@ model Activity {
   status         String           @db.VarChar(50)
   activity_date  DateTime
   delivery_date  DateTime?
-  content        String           @db.VarChar(50)
+  content        String?          @db.VarChar(50)
   payment_status PaymentStatus    @default(unpaid)
   created_at     DateTime         @default(now())
   updated_at     DateTime         @updatedAt
@@ -243,7 +243,7 @@ model Import {
   import_id   Int            @id @default(autoincrement())
   supplier_id Int
   import_date DateTime
-  content     String         @db.VarChar(50)
+  content     String?        @db.VarChar(50)
   created_at  DateTime       @default(now())
   updated_at  DateTime       @updatedAt
   supplier    Supplier       @relation(fields: [supplier_id], references: [supplier_id], onDelete: Restrict, onUpdate: Cascade)

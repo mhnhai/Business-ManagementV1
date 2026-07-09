@@ -8,6 +8,10 @@ async function getAll() {
   return SupplierRepo.getAll();
 }
 
+async function getPage(page: number, pageSize: number, search?: string) {
+  return SupplierRepo.getPage(page, pageSize, search);
+}
+
 async function getOne(id: number) {
   const supplier = await SupplierRepo.getOne(id);
   if (!supplier) {
@@ -46,6 +50,7 @@ async function deleteOne(id: number): Promise<void> {
 export default {
   Errors,
   getAll,
+  getPage,
   getOne,
   addOne,
   updateOne,

@@ -23,6 +23,14 @@ function getAll(): Promise<IUserPublic[]> {
   return UserRepo.getAll();
 }
 
+function getPage(
+  page: number,
+  pageSize: number,
+  search?: string,
+): Promise<{ items: IUserPublic[]; total: number }> {
+  return UserRepo.getPage(page, pageSize, search);
+}
+
 function getAllUnactivated(): Promise<IUserPublic[]> {
   return UserRepo.getAllUnactivated();
 }
@@ -208,6 +216,7 @@ export default {
   Errors,
   getOne,
   getAll,
+  getPage,
   getAllUnactivated,
   search,
   addOne,

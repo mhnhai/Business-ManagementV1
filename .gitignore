@@ -1,0 +1,73 @@
+# ==============================
+# Business Management — monorepo
+# ==============================
+
+# --- Dependencies ---
+node_modules/
+
+# --- Secrets & environment (không commit) ---
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Backend env (DATABASE_URL, JWT keys, mail, Redis…)
+backend/config/.env.*
+backend/.env
+backend/.env.*
+
+# Frontend env (NEXT_PUBLIC_API_URL, AUTH_SECRET…)
+frontend/.env.local
+frontend/.env*.local
+
+# --- Build output ---
+backend/dist/
+frontend/.next/
+frontend/out/
+frontend/build/
+backend/generated/
+
+# --- Logs & runtime ---
+backend/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- Test / coverage ---
+coverage/
+.nyc_output/
+
+# --- TypeScript / tooling cache ---
+*.tsbuildinfo
+.turbo/
+.cache/
+.eslintcache
+
+# --- Deploy (local) ---
+.vercel/
+frontend/.vercel/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- IDE / editor (cấu hình cá nhân) ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Database dumps / local DB ---
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# --- Temp / upload tạm ---
+tmp/
+temp/
+uploads/

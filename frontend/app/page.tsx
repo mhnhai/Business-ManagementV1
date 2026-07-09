@@ -53,7 +53,7 @@ function defaultSection(role: string | undefined): AppSection {
 }
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [activeSection, setActiveSection] = useState<AppSection>("activities");
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function HomePage() {
     if (!canAccessSection(user.role, activeSection)) {
       setActiveSection(allowed[0] ?? defaultSection(user.role));
     }
-  }, [user, activeSection]);
+  }, [user?.userId, user?.role, activeSection]);
 
   useEffect(() => {
     if (user?.userId) {
@@ -71,6 +71,14 @@ export default function HomePage() {
   }, [user?.userId, user?.role]);
 
   const meta = sectionMeta[activeSection];
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <AppShell

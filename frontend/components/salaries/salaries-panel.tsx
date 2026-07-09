@@ -36,7 +36,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ListTableShell } from "@/components/ui/list-table-shell";
-import { listCol, listCell } from "@/lib/list-table-layout";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { listCol, listCell, listHead } from "@/lib/list-table-layout";
 import { Badge } from "@/components/ui/badge";
 
 const emptyForm = {
@@ -80,6 +81,10 @@ export function SalariesPanel() {
 
   const [selectedUser, setSelectedUser] = useState<SalaryWithUser["user"] | null>(null);
   const [userModalOpen, setUserModalOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // --- THÊM STATE CHO MODAL QR CODE ---
   const [qrModalOpen, setQrModalOpen] = useState(false);
@@ -93,22 +98,33 @@ export function SalariesPanel() {
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (
+    targetPage = page,
+    overrides?: { month?: string; year?: string },
+  ) => {
+    const month = overrides?.month ?? filterMonth;
+    const year = overrides?.year ?? filterYear;
     setLoading(true);
     setError(null);
     try {
-      const [{ salaries: salaryList }, userList] = await Promise.all([
-        salariesApi.getAll(),
+      const [salaryList, userList] = await Promise.all([
+        salariesApi.getPage(targetPage, pageSize, {
+          month,
+          year,
+        }),
         usersApi.getAll(),
       ]);
-      setSalaries(salaryList);
+      setSalaries(salaryList.items);
+      setTotalItems(salaryList.total);
+      setTotalPages(Math.max(1, Math.ceil(salaryList.total / salaryList.pageSize)));
+      setPage(salaryList.page);
       setUsers(userList);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load data");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, filterMonth, filterYear]);
 
   useEffect(() => {
     void load();
@@ -259,9 +275,7 @@ export function SalariesPanel() {
     }
   }
 
-  const filteredSalaries = salaries.filter(
-    (s) => String(s.month) === filterMonth && String(s.year) === filterYear
-  );
+  const filteredSalaries = salaries;
 
   return (
     <Card>
@@ -296,7 +310,10 @@ export function SalariesPanel() {
           </div>
           
           <div className="w-32">
-            <Select value={filterMonth} onValueChange={setFilterMonth}>
+            <Select value={filterMonth} onValueChange={(value) => {
+              setFilterMonth(value);
+              void load(1, { month: value });
+            }}>
               <SelectTrigger className="h-9 bg-background">
                 <SelectValue placeholder="Chọn tháng" />
               </SelectTrigger>
@@ -309,7 +326,10 @@ export function SalariesPanel() {
           </div>
 
           <div className="w-32">
-            <Select value={filterYear} onValueChange={setFilterYear}>
+            <Select value={filterYear} onValueChange={(value) => {
+              setFilterYear(value);
+              void load(1, { year: value });
+            }}>
               <SelectTrigger className="h-9 bg-background">
                 <SelectValue placeholder="Chọn năm" />
               </SelectTrigger>
@@ -342,18 +362,31 @@ export function SalariesPanel() {
             <p className="text-xs mt-1">Bạn có thể bấm nút "Tính lương tự động" để quét và tạo nhanh bảng lương hàng loạt.</p>
           </div>
         ) : (
-          <ListTableShell>
+          <ListTableShell
+            pagination={
+              <TablePagination
+                page={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={(nextPage) => {
+                  setPage(nextPage);
+                  void load(nextPage);
+                }}
+              />
+            }
+          >
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className={listCol.name}>Nhân viên</TableHead>
-                <TableHead className={listCol.date}>Kỳ lương</TableHead>
-                <TableHead className={listCol.money}>Lương cơ bản</TableHead>
-                <TableHead className={listCol.money}>Hoa hồng</TableHead>
-                <TableHead className={listCol.money}>Thưởng</TableHead>
-                <TableHead className={listCol.money}>Tổng cộng</TableHead>
-                <TableHead className={listCol.status}>Trạng thái</TableHead>
-                <TableHead className={listCol.actions}>Thao tác</TableHead>
+                <TableHead className={`${listCol.date} ${listHead.center}`}>Kỳ lương</TableHead>
+                <TableHead className={`${listCol.money} ${listHead.right}`}>Lương cơ bản</TableHead>
+                <TableHead className={`${listCol.money} ${listHead.right}`}>Hoa hồng</TableHead>
+                <TableHead className={`${listCol.money} ${listHead.right}`}>Thưởng</TableHead>
+                <TableHead className={`${listCol.money} ${listHead.right}`}>Tổng cộng</TableHead>
+                <TableHead className={`${listCol.status} ${listHead.center}`}>Trạng thái</TableHead>
+                <TableHead className={`${listCol.actionsWide} ${listHead.center}`}>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -370,7 +403,7 @@ export function SalariesPanel() {
                       @{s.user?.username}
                     </span>
                   </TableCell>
-                  <TableCell className={`font-medium ${listCell.nowrap}`}>{`${s.month}/${s.year}`}</TableCell>
+                  <TableCell className={`font-medium ${listCell.center}`}>{`${s.month}/${s.year}`}</TableCell>
                   <TableCell className={listCell.money}>{formatCurrency(s.baseSalary)}</TableCell>
                   <TableCell className={listCell.money}>{formatCurrency(s.commission)}</TableCell>
                   <TableCell className={listCell.money}>{formatCurrency(s.bonus)}</TableCell>
@@ -378,7 +411,8 @@ export function SalariesPanel() {
                     {formatCurrency(s.baseSalary + s.commission + s.bonus)}
                   </TableCell>
                   
-                  <TableCell>
+                  <TableCell className={listCell.status}>
+                    <div className="flex justify-center">
                     {(s as any).isPaid ? (
                       <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1 font-medium">
                         <CheckCircle2 className="h-3 w-3" /> Đã trả
@@ -388,14 +422,16 @@ export function SalariesPanel() {
                         <Clock className="h-3 w-3" /> Chưa trả
                       </Badge>
                     )}
+                    </div>
                   </TableCell>
 
-                  <TableCell className={listCell.actions}>
-                    <div className="flex justify-end gap-1">
+                  <TableCell className={listCell.actionsCenter}>
+                    <div className="flex flex-nowrap items-center justify-center gap-0">
                       {!(s as any).isPaid && (
                         <Button 
                           variant="ghost" 
-                          size="sm" 
+                          size="sm"
+                          className="h-8 w-8 shrink-0 p-0"
                           onClick={() => handleGenerateQR(s)}
                           title="Quét mã QR chi trả nhanh"
                         >
@@ -403,10 +439,20 @@ export function SalariesPanel() {
                         </Button>
                       )}
 
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 shrink-0 p-0"
+                        onClick={() => openEdit(s)}
+                      >
                         <Pencil className="h-4 w-4 text-blue-500" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => void handleDelete(s.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 shrink-0 p-0"
+                        onClick={() => void handleDelete(s.id)}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>

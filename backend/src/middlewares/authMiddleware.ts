@@ -11,9 +11,18 @@ const AUTH_ERR = 'Session invalid or expired';
 /**
  * Middleware to verify the access token from cookies and attach user data to res.locals.
  */
+function extractBearerToken(req: Req): string | undefined {
+  const header = req.headers.authorization;
+  if (typeof header === 'string' && header.startsWith('Bearer ')) {
+    return header.slice('Bearer '.length).trim();
+  }
+  return undefined;
+}
+
 async function auth(req: Req, res: Res, next: NextFunction) {
   try {
-    const { accessToken } = req.cookies as { accessToken?: string };
+    const cookieToken = (req.cookies as { accessToken?: string }).accessToken;
+    const accessToken = extractBearerToken(req) ?? cookieToken;
     if (!accessToken) {
       throw new RouteError(HttpStatusCodes.UNAUTHORIZED, AUTH_ERR);
     }

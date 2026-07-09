@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { 
   UserPlus, Search, Building2, Mail, Phone, 
   Trash2, Pencil, RefreshCw, UserCog,
@@ -26,8 +26,7 @@ import {
 } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ListTableShell } from "@/components/ui/list-table-shell";
-import { usePagination } from "@/hooks/use-pagination";
-import { listCol, listCell } from "@/lib/list-table-layout";
+import { listCol, listCell, listHead } from "@/lib/list-table-layout";
 import { EmployeeLocationsDialog } from "@/components/users/employee-locations-dialog";
 
 /******************************************************************************
@@ -57,6 +56,10 @@ export function UsersPanel() {
   const [unactivatedUsers, setUnactivatedUsers] = useState<UserPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // ── User dialog state ────────────────────────────────────────────────────────
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -82,11 +85,13 @@ export function UsersPanel() {
                                      Data loading
   ******************************************************************************/
 
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async (targetPage = page, search = searchQuery) => {
     setLoading(true);
     try {
       const [activeData, unactiveData, assignmentRows, bankAccountRows] = await Promise.all([
-        usersApi.getAll(),
+        usersApi.getPage(targetPage, pageSize, {
+          search: search.trim() || undefined,
+        }),
         usersApi.getAllUnactivated(),
         employeeLocationsApi.getAll(),
         bankAccountsApi.getAll(),
@@ -106,7 +111,10 @@ export function UsersPanel() {
         byBankUser.set(ba.userId, ba);
       }
 
-      setUsers(activeData);
+      setUsers(activeData.items);
+      setTotalItems(activeData.total);
+      setTotalPages(Math.max(1, Math.ceil(activeData.total / activeData.pageSize)));
+      setPage(activeData.page);
       setUnactivatedUsers(unactiveData);
       setAssignmentsByUser(byUser);
       setBankAccounts(byBankUser);
@@ -115,7 +123,7 @@ export function UsersPanel() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, searchQuery]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -128,24 +136,7 @@ export function UsersPanel() {
                                      Filtered + Paginated
   ******************************************************************************/
 
-  const filteredUsers = useMemo(
-    () =>
-      users.filter((user) =>
-        Object.values(user).some((val) =>
-          String(val).toLowerCase().includes(searchQuery.toLowerCase()),
-        ),
-      ),
-    [users, searchQuery],
-  );
-
-  const {
-    page,
-    setPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    paginatedItems: paginatedUsers,
-  } = usePagination(filteredUsers, undefined, searchQuery);
+  const filteredUsers = users;
 
   /******************************************************************************
                                      User handlers
@@ -286,7 +277,10 @@ export function UsersPanel() {
               placeholder="Tìm nhân viên đã duyệt..."
               className="pl-8"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                void loadUsers(1, e.target.value);
+              }}
             />
           </div>
 
@@ -324,31 +318,34 @@ export function UsersPanel() {
                 totalPages={totalPages}
                 totalItems={totalItems}
                 pageSize={pageSize}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => {
+                  setPage(nextPage);
+                  void loadUsers(nextPage);
+                }}
               />
             }
           >
             <Table className="min-w-[1100px]">
               <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className={`font-bold ${listCol.id}`}>Mã NV</TableHead>
+                  <TableHead className={`font-bold ${listCol.id} ${listHead.center}`}>Mã NV</TableHead>
                   <TableHead className={`font-bold ${listCol.name}`}>Họ và Tên</TableHead>
                   <TableHead className="font-bold">Phòng ban</TableHead>
                   <TableHead className={`font-bold ${listCol.email}`}>Liên hệ</TableHead>
                   <TableHead className="font-bold">Tài khoản lương</TableHead>
-                  <TableHead className={`font-bold ${listCol.role}`}>Vai trò</TableHead>
+                  <TableHead className={`font-bold ${listCol.role} ${listHead.center}`}>Vai trò</TableHead>
                   <TableHead className="font-bold">Phân vùng</TableHead>
-                  <TableHead className={`font-bold ${listCol.actions}`}>Thao tác</TableHead>
+                  <TableHead className={`font-bold ${listCol.actionsWide} ${listHead.center}`}>Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedUsers.length > 0 ? (
-                  paginatedUsers.map((u) => {
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((u) => {
                     const ba = bankAccounts.get(u.id);
                     return (
                       <TableRow key={u.id} className="hover:bg-muted/30 transition-colors">
                         {/* Mã NV */}
-                        <TableCell className={`font-medium text-muted-foreground ${listCell.nowrap}`}>
+                        <TableCell className={`font-medium text-muted-foreground ${listCell.center}`}>
                           #{u.id}
                         </TableCell>
 
@@ -404,13 +401,15 @@ export function UsersPanel() {
                         </TableCell>
 
                         {/* Vai trò */}
-                        <TableCell>
+                        <TableCell className={listCell.status}>
+                          <div className="flex justify-center">
                           <Badge
                             variant="outline"
                             className={u.role === "admin" ? "border-destructive text-destructive" : ""}
                           >
                             {u.role}
                           </Badge>
+                          </div>
                         </TableCell>
 
                         {/* Phân vùng */}
@@ -431,12 +430,13 @@ export function UsersPanel() {
                         </TableCell>
 
                         {/* Thao tác */}
-                        <TableCell className={listCell.actions}>
-                          <div className="flex justify-end gap-1">
+                        <TableCell className={listCell.actionsCenter}>
+                          <div className="flex flex-nowrap items-center justify-center gap-0">
                             {canAssignZones(u.role) && (
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="h-8 w-8 shrink-0 p-0"
                                 onClick={() => openZoneDialog(u)}
                                 title="Phân vùng hoạt động"
                               >
@@ -446,15 +446,26 @@ export function UsersPanel() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-8 w-8 shrink-0 p-0"
                               onClick={() => void handleToggleActivation(u)}
                               title="Hủy kích hoạt tài khoản"
                             >
                               <UserX className="h-4 w-4 text-amber-600" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => openEdit(u)}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 shrink-0 p-0"
+                              onClick={() => openEdit(u)}
+                            >
                               <Pencil className="h-4 w-4 text-blue-500" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => void handleDelete(u.id)}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 shrink-0 p-0"
+                              onClick={() => void handleDelete(u.id)}
+                            >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>

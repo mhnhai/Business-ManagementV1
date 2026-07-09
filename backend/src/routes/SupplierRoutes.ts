@@ -7,6 +7,7 @@ import SupplierService from '@src/services/SupplierService';
 
 import { Req, Res } from './common/express-types';
 import parseReq from './common/parseReq';
+import { parsePaginationQuery } from './common/pagination';
 
 const reqValidators = {
   add: parseReq({ supplier: Supplier.isCompleteWrite }),
@@ -15,9 +16,22 @@ const reqValidators = {
   delete: parseReq({ id: transform(Number, isNumber) }),
 } as const;
 
-async function getAll(_: Req, res: Res) {
-  const suppliers = await SupplierService.getAll();
-  res.status(HttpStatusCodes.OK).json({ suppliers });
+async function getAll(req: Req, res: Res) {
+  const pagination = parsePaginationQuery(req.query, 10);
+  const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+  if (!pagination.enabled) {
+    const suppliers = await SupplierService.getAll();
+    res.status(HttpStatusCodes.OK).json({ suppliers });
+    return;
+  }
+
+  const result = await SupplierService.getPage(pagination.page, pagination.pageSize, search);
+  res.status(HttpStatusCodes.OK).json({
+    suppliers: result.items,
+    total: result.total,
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+  });
 }
 
 async function getOne(req: Req, res: Res) {

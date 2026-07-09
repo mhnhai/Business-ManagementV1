@@ -1,5 +1,5 @@
-import { isDate, isNonEmptyString, isString, isUnsignedInteger } from 'jet-validators';
-import { parseObject, Schema, testObject } from 'jet-validators/utils';
+import { isDate, isString, isUnsignedInteger } from 'jet-validators';
+import { makeNullable, parseObject, Schema, testObject } from 'jet-validators/utils';
 import { PaymentStatuses, type PaymentStatusCode } from '@src/common/constants/payment-status';
 import { transformIsDate } from '@src/common/utils/validators';
 import { Entity } from './common/types';
@@ -32,7 +32,7 @@ export interface IActivity extends Entity {
   paymentStatus: PaymentStatusCode;
   activityDate: Date;
   deliveryDate: Date | null;
-  content: string;
+  content: string | null;
 }
 
 /** Bổ sung thông tin thanh toán khi liệt kê hoạt động. */
@@ -46,7 +46,7 @@ export interface IActivityListItem extends IActivity {
 export interface IActivityWrite {
   userId: number;
   customerId: number;
-  content: string;
+  content: string | null;
 }
 
 export interface IActivityUpdate extends IActivityWrite {
@@ -62,10 +62,12 @@ const GetDefaults = (): IActivity => ({
   paymentStatus: PaymentStatuses.UNPAID,
   activityDate: new Date(),
   deliveryDate: null,
-  content: '',
+  content: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 });
+
+const isNullableString = makeNullable(isString);
 
 const schema = {
   id: isUnsignedInteger,
@@ -76,7 +78,7 @@ const schema = {
   paymentStatus: isPaymentStatusCode,
   activityDate: transformIsDate,
   deliveryDate: isNullableDeliveryDate,
-  content: isString,
+  content: isNullableString,
   createdAt: transformIsDate,
   updatedAt: transformIsDate,
 } satisfies Schema<IActivity>;
@@ -84,7 +86,7 @@ const schema = {
 const writeSchema = {
   userId: isUnsignedInteger,
   customerId: isUnsignedInteger,
-  content: isString,
+  content: isNullableString,
 } satisfies Schema<IActivityWrite>;
 
 const parseActivity = parseObject(schema);
@@ -93,14 +95,14 @@ const isCompleteActivityWrite = testObject<IActivityWrite>({
   ...writeSchema,
   userId: isUnsignedInteger,
   customerId: isUnsignedInteger,
-  content: isNonEmptyString,
+  content: isNullableString,
 });
 
 const isCompleteActivityUpdate = testObject<IActivityUpdate>({
   id: isUnsignedInteger,
   userId: isUnsignedInteger,
   customerId: isUnsignedInteger,
-  content: isNonEmptyString,
+  content: isNullableString,
 });
 
 function new_(activity?: Partial<IActivity>): IActivity {

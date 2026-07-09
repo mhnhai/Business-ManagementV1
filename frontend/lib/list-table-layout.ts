@@ -16,6 +16,15 @@ export const listCol = {
   coords: "w-[128px]",
   balance: "w-[108px]",
   name: "w-[180px]",
+  representative: "w-[108px]",
+  location: "w-[124px]",
+  actionsWide: "w-[152px]",
+} as const;
+
+/** Căn lề tiêu đề cột — khớp với `listCell` tương ứng. */
+export const listHead = {
+  center: "text-center",
+  right: "text-right",
 } as const;
 
 export const listCell = {
@@ -23,5 +32,8 @@ export const listCell = {
   money: "text-right whitespace-nowrap tabular-nums",
   number: "text-right whitespace-nowrap tabular-nums",
   actions: "text-right whitespace-nowrap",
+  actionsCenter: "text-center whitespace-nowrap",
+  status: "text-center whitespace-nowrap",
+  center: "text-center whitespace-nowrap",
   nowrap: "whitespace-nowrap",
 } as const;
