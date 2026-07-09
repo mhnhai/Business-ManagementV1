@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
+import { authConfig } from "@/auth.config";
 import { refreshAccessToken } from "@/lib/refresh-access-token";
 
 const API_BASE =
@@ -10,7 +11,7 @@ const API_BASE =
 const ACCESS_TOKEN_TTL_MS = 14 * 60 * 1000;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  trustHost: true,
+  ...authConfig,
   providers: [
     Credentials({
       credentials: {
@@ -53,12 +54,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  pages: {
-    signIn: "/auth",
-  },
-  session: {
-    strategy: "jwt",
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

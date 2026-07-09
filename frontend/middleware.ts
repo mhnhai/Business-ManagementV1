@@ -1,8 +1,11 @@
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 
-import { auth } from "@/auth";
+import { authConfig } from "@/auth.config";
 
 const PUBLIC_AUTH_PREFIXES = ["/auth/verify-email", "/auth/reset-password"];
+
+const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
