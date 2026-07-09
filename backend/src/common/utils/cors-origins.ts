@@ -7,6 +7,9 @@ const LOCAL_ORIGINS = [
   'http://127.0.0.1:3001',
 ];
 
+/** Vercel production + preview deployments (branch URLs). */
+const VERCEL_ORIGIN_PATTERN = /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/;
+
 function normalizeOrigin(value: string): string {
   return value.trim().replace(/\/$/, '');
 }
@@ -26,4 +29,12 @@ export function getCorsOrigins(): string[] {
   }
 
   return [...origins];
+}
+
+export function isAllowedCorsOrigin(origin: string): boolean {
+  const normalized = normalizeOrigin(origin);
+  if (getCorsOrigins().includes(normalized)) {
+    return true;
+  }
+  return VERCEL_ORIGIN_PATTERN.test(normalized);
 }

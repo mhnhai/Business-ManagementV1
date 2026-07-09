@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import Paths from '@src/common/constants/Paths';
 import { RouteError } from '@src/common/utils/route-errors';
-import { getCorsOrigins } from '@src/common/utils/cors-origins';
+import { isAllowedCorsOrigin } from '@src/common/utils/cors-origins';
 import BaseRouter from '@src/routes/apiRouter';
 import EnvVars, { NodeEnvs } from './common/constants/env';
 
@@ -19,11 +19,9 @@ app.set('trust proxy', 1);
 
 // **** Middleware **** //
 
-const corsOrigins = getCorsOrigins();
-
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && corsOrigins.includes(origin)) {
+  if (origin && isAllowedCorsOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader(
