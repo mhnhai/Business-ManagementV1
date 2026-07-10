@@ -147,6 +147,11 @@ const Paths = {
     Upsert: '/upsert/:userId',
     Delete: '/delete/:userId',
   },
+  Backup: {
+    _: '/backup',
+    Export: '/export',
+    Restore: '/restore',
+  },
 } as const;
 
 export default Paths;

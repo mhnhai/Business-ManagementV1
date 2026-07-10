@@ -21,6 +21,7 @@ import ImportDetailRoutes from './ImportDetailRoutes';
 import EmployeeLocationRoutes from './EmployeeLocationRoutes';
 import rateLimiters from '@src/middlewares/rateLimitMiddleware';
 import BankAccountRoutes from './BankAccountRoutes';
+import BackupRoutes from './BackupRoutes';
 
 /******************************************************************************
                                 Setup
@@ -215,6 +216,11 @@ bankAccountRouter.delete(
 );
 
 apiRouter.use(Paths.BankAccount._, bankAccountRouter);
+
+const backupRouter = Router();
+backupRouter.get(Paths.Backup.Export, rateLimiters.default, ...adminOnly, BackupRoutes.exportData);
+backupRouter.post(Paths.Backup.Restore, rateLimiters.default, ...adminOnly, BackupRoutes.restore);
+apiRouter.use(Paths.Backup._, backupRouter);
 
 /******************************************************************************
                                 Export

@@ -878,6 +878,26 @@ export const importDetailsApi = {
     ),
 };
 
+function buildBackupDownloadName() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `backup_seller_system_${yyyy}_${mm}_${dd}.json`;
+}
+
+export const backupApi = {
+  exportData: () => downloadBlob("/backup/export", buildBackupDownloadName()),
+  restore: (payload: unknown) =>
+    request<{ restoredAt: string; counts: Record<string, number> }>(
+      "/backup/restore",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
+};
+
 export const lookupApi = {
   users: () => usersApi.getAll(),
   customers: () => customersApi.getAll(),
