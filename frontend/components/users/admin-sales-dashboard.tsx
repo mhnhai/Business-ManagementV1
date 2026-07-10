@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart3, RefreshCw, Users } from "lucide-react";
 
 import { SellerStatistic } from "@/components/statistics/seller-statistic";
-import { SystemBackupPanel } from "@/components/users/system-backup-panel";
 import { usersApi } from "@/lib/api";
 import type { UserPublic } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -88,8 +87,6 @@ export function AdminSalesDashboard() {
           </div>
         </CardContent>
       </Card>
-
-      <SystemBackupPanel />
 
       <div className="bg-card rounded-xl border p-6 shadow-sm">
         {loadingSellers ? (
