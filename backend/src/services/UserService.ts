@@ -69,6 +69,34 @@ async function updateOne(user: IUser): Promise<IUserPublic> {
   }
 }
 
+async function changePassword(
+  userId: number,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const user = await UserRepo.getById(userId);
+  if (!user) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.USER_NOT_FOUND);
+  }
+
+  const isCurrentValid = await UserRepo.comparePassword(
+    currentPassword,
+    user.password,
+  );
+  if (!isCurrentValid) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      Errors.INVALID_CURRENT_PASSWORD,
+    );
+  }
+
+  if (currentPassword === newPassword) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.PASSWORD_UNCHANGED);
+  }
+
+  await updatePassword(userId, newPassword);
+}
+
 async function updatePassword(userId: number, passwordInput: string): Promise<void> {
   try {
     await UserRepo.update({ 
@@ -221,6 +249,7 @@ export default {
   search,
   addOne,
   updateOne,
+  changePassword,
   updatePassword,
   delete: deleteOne,
   getEmployeeOverviewStats,

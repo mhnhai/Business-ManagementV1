@@ -39,6 +39,7 @@ userRouter.get(Paths.Users.GetUnactivated, rateLimiters.default, adminOnly, User
 userRouter.get(Paths.Users.Search, rateLimiters.default, adminOnly, UserRoutes.search);
 userRouter.post(Paths.Users.Add, rateLimiters.auth, adminOnly, UserRoutes.add);
 userRouter.put(Paths.Users.Update, rateLimiters.auth, adminOnly, UserRoutes.update);
+userRouter.put(Paths.Users.ChangePassword, rateLimiters.auth, adminOnly, UserRoutes.changePassword);
 userRouter.delete(Paths.Users.Delete, rateLimiters.auth, adminOnly, UserRoutes.delete);
 userRouter.get(Paths.Users.GetOne, rateLimiters.default, adminOnly, UserRoutes.getOne);
 

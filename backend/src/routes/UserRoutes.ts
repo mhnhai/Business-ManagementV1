@@ -34,6 +34,11 @@ const reqValidators = {
     username: isNonEmptyString, 
     password: isNonEmptyString 
   }),
+  changePassword: parseReq({
+    userId: transform(Number, isNumber),
+    currentPassword: isNonEmptyString,
+    newPassword: isNonEmptyString,
+  }),
   getStats: parseReq({ userId: transform(Number, isNumber) }),
   getStatsScope: parseReq({ userId: transform(String, isString) }),
   // Validator for parsing optional query strings along with the userId parameter
@@ -195,6 +200,23 @@ async function update(req: Req, res: Res, next: NextFunction) {
     const { user } = reqValidators.update(req.body);
     const updated = await UserService.updateOne(user);
     return res.status(HttpStatusCodes.OK).json({ user: updated });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+/**
+ * Change user password (requires current password).
+ * @route PUT /api/users/change-password
+ */
+async function changePassword(req: Req, res: Res, next: NextFunction) {
+  try {
+    const { userId, currentPassword, newPassword } =
+      reqValidators.changePassword(req.body);
+    await UserService.changePassword(userId, currentPassword, newPassword);
+    return res.status(HttpStatusCodes.OK).json({
+      message: 'Đổi mật khẩu thành công',
+    });
   } catch (error) {
     return next(error);
   }
@@ -424,6 +446,7 @@ export default {
   search,
   add,
   update,
+  changePassword,
   delete: delete_,
 
   getOverviewStats,

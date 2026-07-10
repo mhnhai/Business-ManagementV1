@@ -23,6 +23,7 @@ const Paths = {
     GetUnactivated: '/unactivated',
     Search: '/search',
     Update: '/update',
+    ChangePassword: '/change-password',
     Delete: '/delete/:id',
     Login: '/login',
   },

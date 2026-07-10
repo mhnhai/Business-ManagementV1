@@ -3,6 +3,8 @@ export const AuthErrors = {
   USER_NOT_FOUND: 'User not found',
   EMPLOYEE_NOT_FOUND: 'Employee not found',
   INVALID_CREDENTIALS: 'Invalid username or password',
+  INVALID_CURRENT_PASSWORD: 'Mật khẩu hiện tại không đúng',
+  PASSWORD_UNCHANGED: 'Mật khẩu mới phải khác mật khẩu hiện tại',
 } as const;
 
 /** Activity / order header */

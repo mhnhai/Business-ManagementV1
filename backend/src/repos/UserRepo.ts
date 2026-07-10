@@ -44,6 +44,13 @@ function getGrossOrderTotal(activity: ActivityDebtRow): number {
 /******************************************************************************
                                     Functions
 ******************************************************************************/
+async function getById(id: number): Promise<IUser | null> {
+  const row = await prisma.user.findFirst({
+    where: { user_id: id, deleted_at: null },
+  });
+  return row ? toUser(row) : null;
+}
+
 async function getOne(username: string): Promise<IUser | null> {
   const row = await prisma.user.findFirst({
     where: { 
@@ -975,6 +982,7 @@ export async function getSellerRevenueSeries(
    ========================================================================== */
 
 export default {
+  getById,
   getOne,
   getOneByEmail,
   persists,

@@ -669,6 +669,16 @@ export const usersApi = {
       body: JSON.stringify({ user }),
     }).then((d) => d.user),
 
+  changePassword: (payload: {
+    userId: number;
+    currentPassword: string;
+    newPassword: string;
+  }) =>
+    request<{ message: string }>("/users/change-password", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
   delete: (id: number) =>
     request<void>(`/users/delete/${id}`, {
       method: "DELETE",

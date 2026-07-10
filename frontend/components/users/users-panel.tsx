@@ -5,7 +5,7 @@ import {
   UserPlus, Search, Building2, Mail, Phone, 
   Trash2, Pencil, RefreshCw, UserCog,
   UserCheck, UserX, ClipboardCheck, MapPin,
-  CreditCard
+  CreditCard, KeyRound
 } from "lucide-react";
 
 import { bankAccountsApi, employeeLocationsApi, usersApi } from "@/lib/api";
@@ -46,6 +46,12 @@ const emptyUser: Partial<User> = {
 
 const emptyBankForm = { bankName: "", accountNumber: "" };
 
+const emptyPasswordForm = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
+
 /******************************************************************************
                                    Component
 ******************************************************************************/
@@ -80,6 +86,13 @@ export function UsersPanel() {
   const [bankTargetUser, setBankTargetUser] = useState<UserPublic | null>(null);
   const [bankForm, setBankForm] = useState(emptyBankForm);
   const [isBankSubmitting, setIsBankSubmitting] = useState(false);
+
+  // ── Password dialog state ────────────────────────────────────────────────────
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordTargetUser, setPasswordTargetUser] = useState<UserPublic | null>(null);
+  const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
 
   /******************************************************************************
                                      Data loading
@@ -150,7 +163,6 @@ export function UsersPanel() {
   const openEdit = (user: UserPublic) => {
     setForm({
       ...user,
-      password: "",
       role: user.role === "user" ? "employee" : user.role,
     });
     setDialogOpen(true);
@@ -161,7 +173,8 @@ export function UsersPanel() {
     setIsSubmitting(true);
     try {
       if (form.id) {
-        await usersApi.update(form);
+        const { password: _password, ...userWithoutPassword } = form;
+        await usersApi.update({ ...userWithoutPassword, password: "" });
       } else {
         await usersApi.add(form);
       }
@@ -255,6 +268,52 @@ export function UsersPanel() {
       alert("Lỗi khi lưu tài khoản ngân hàng");
     } finally {
       setIsBankSubmitting(false);
+    }
+  }
+
+  function openPasswordDialog(user: UserPublic) {
+    setPasswordTargetUser(user);
+    setPasswordForm(emptyPasswordForm);
+    setPasswordError(null);
+    setPasswordDialogOpen(true);
+  }
+
+  async function handleChangePassword() {
+    if (!passwordTargetUser) return;
+
+    if (!passwordForm.currentPassword.trim()) {
+      setPasswordError("Vui lòng nhập mật khẩu hiện tại");
+      return;
+    }
+    if (!passwordForm.newPassword.trim()) {
+      setPasswordError("Vui lòng nhập mật khẩu mới");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError("Mật khẩu xác nhận không khớp");
+      return;
+    }
+    if (passwordForm.currentPassword === passwordForm.newPassword) {
+      setPasswordError("Mật khẩu mới phải khác mật khẩu hiện tại");
+      return;
+    }
+
+    setIsPasswordSubmitting(true);
+    setPasswordError(null);
+    try {
+      await usersApi.changePassword({
+        userId: passwordTargetUser.id,
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordDialogOpen(false);
+      setPasswordForm(emptyPasswordForm);
+    } catch (error) {
+      setPasswordError(
+        error instanceof Error ? error.message : "Đổi mật khẩu thất bại",
+      );
+    } finally {
+      setIsPasswordSubmitting(false);
     }
   }
 
@@ -447,6 +506,15 @@ export function UsersPanel() {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 shrink-0 p-0"
+                              onClick={() => openPasswordDialog(u)}
+                              title="Đổi mật khẩu"
+                            >
+                              <KeyRound className="h-4 w-4 text-violet-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 shrink-0 p-0"
                               onClick={() => void handleToggleActivation(u)}
                               title="Hủy kích hoạt tài khoản"
                             >
@@ -581,18 +649,18 @@ export function UsersPanel() {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">
-                  {form.id ? "Mật khẩu mới (để trống nếu không đổi)" : "Mật khẩu"}
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  required={!form.id}
-                />
-              </div>
+              {!form.id && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Mật khẩu</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    required
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Phòng ban</Label>
                 <Input
@@ -628,6 +696,28 @@ export function UsersPanel() {
                   placeholder="090..."
                 />
               </div>
+
+              {/* Nút đổi mật khẩu — chỉ hiện khi edit */}
+              {form.id && (
+                <div className="space-y-2 col-span-2 border-t pt-4 mt-2">
+                  <Label className="text-sm font-semibold flex items-center gap-1.5 text-primary">
+                    <KeyRound className="h-4 w-4" />
+                    Đổi mật khẩu
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-start font-normal"
+                    onClick={() => {
+                      setDialogOpen(false);
+                      openPasswordDialog(form as UserPublic);
+                    }}
+                  >
+                    <KeyRound className="h-3.5 w-3.5 text-muted-foreground mr-2" />
+                    Mở form đổi mật khẩu
+                  </Button>
+                </div>
+              )}
 
               {/* Nút mở Bank Dialog — chỉ hiện khi edit */}
               {form.id && (
@@ -682,6 +772,75 @@ export function UsersPanel() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog: Đổi mật khẩu ── */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Đổi mật khẩu — {passwordTargetUser?.fullName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {passwordError && (
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                {passwordError}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="currentPassword">Mật khẩu hiện tại</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                autoComplete="current-password"
+                value={passwordForm.currentPassword}
+                onChange={(e) =>
+                  setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="newPassword">Mật khẩu mới</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                autoComplete="new-password"
+                value={passwordForm.newPassword}
+                onChange={(e) =>
+                  setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) =>
+                  setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                }
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Cần nhập đúng mật khẩu hiện tại của nhân viên để xác nhận thay đổi.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button
+              onClick={() => void handleChangePassword()}
+              disabled={isPasswordSubmitting}
+            >
+              {isPasswordSubmitting ? "Đang lưu..." : "Đổi mật khẩu"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
