@@ -24,6 +24,7 @@ import {
 import { UserDashboard } from "@/components/users/user-dashboard";
 import { AdminSalesDashboard } from "@/components/users/admin-sales-dashboard";
 import { SettingsPanel } from "@/components/settings/settings-panel";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
 
 function SectionPanel({ section }: { section: AppSection }) {
   switch (section) {
@@ -47,6 +48,8 @@ function SectionPanel({ section }: { section: AppSection }) {
       return <AdminSalesDashboard />;
     case "settings":
       return <SettingsPanel />;
+    case "assistant":
+      return <AssistantPanel />;
     default:
       return null;
   }

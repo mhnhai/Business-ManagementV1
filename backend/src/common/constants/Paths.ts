@@ -152,6 +152,12 @@ const Paths = {
     Export: '/export',
     Restore: '/restore',
   },
+  Assistant: {
+    _: '/assistant',
+    Chat: '/chat',
+    Health: '/health',
+    KnowledgeSync: '/knowledge/sync',
+  },
 } as const;
 
 export default Paths;

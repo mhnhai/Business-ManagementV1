@@ -35,7 +35,23 @@ const authLimiter = rateLimit({
   },
 });
 
+const assistantLimiter = rateLimit({
+  windowMs: isDev ? 1 * 60 * 1000 : 15 * 60 * 1000,
+  max: isDev ? 120 : 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req: Request, _res: Response, next: NextFunction) => {
+    return next(
+      new RouteError(
+        HttpStatusCodes.TOO_MANY_REQUESTS,
+        'Too many assistant requests, please try again later.',
+      ),
+    );
+  },
+});
+
 export default {
   default: limiter,
   auth: authLimiter,
+  assistant: assistantLimiter,
 } as const;

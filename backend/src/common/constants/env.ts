@@ -51,6 +51,10 @@ const EnvVars = {
   JwtRefreshTokenKey: getStr('JWT_REFRESH_TOKEN_KEY'),
   MailUser: getStr('MAIL_USER'),
   MailPass: getStr('MAIL_PASS'),
+  /** Required for Trợ lý AI; leave unset only if assistant unused (dev placeholder ok). */
+  GeminiApiKey: process.env.GEMINI_API_KEY ?? '',
+  GeminiModel: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
+  GeminiFileSearchStore: process.env.GEMINI_FILE_SEARCH_STORE || '',
 };
 
 /******************************************************************************

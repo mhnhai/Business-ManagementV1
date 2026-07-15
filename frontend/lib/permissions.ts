@@ -19,6 +19,7 @@ const ADMIN_SECTIONS: AppSection[] = [
   "users",
   "salaries",
   "settings",
+  "assistant",
 ];
 
 const EMPLOYEE_SECTIONS: AppSection[] = [

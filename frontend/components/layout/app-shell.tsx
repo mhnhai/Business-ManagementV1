@@ -15,6 +15,7 @@ import {
   Settings,
   Menu,
   X,
+  Bot,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -25,7 +26,7 @@ import { signOut, useAuth } from "@/lib/auth-context";
 import { sectionsForRole } from "@/lib/permissions";
 import { useEffect, useState } from "react";
 
-export type AppSection = "user-dashboard" | "admin-sales-dashboard" | "products" | "suppliers" | "imports" | "customers" | "activities" | "salaries" | "users" | "settings";
+export type AppSection = "user-dashboard" | "admin-sales-dashboard" | "products" | "suppliers" | "imports" | "customers" | "activities" | "salaries" | "users" | "settings" | "assistant";
 
 type NavItem = {
   id: AppSection;
@@ -89,6 +90,12 @@ const allNavItems: NavItem[] = [
     id: "settings",
     label: "Cài đặt",
     icon: <Settings className="h-4 w-4" />,
+    adminOnly: true,
+  },
+  {
+    id: "assistant",
+    label: "Trợ lý AI",
+    icon: <Bot className="h-4 w-4" />,
     adminOnly: true,
   },
 ];
@@ -301,5 +308,10 @@ export const sectionMeta: Record<
   settings: {
     title: "Cài đặt",
     description: "Sao lưu, phục hồi dữ liệu và các tùy chọn quản trị hệ thống",
+  },
+  assistant: {
+    title: "Trợ lý AI",
+    description:
+      "Hỏi đáp có kiểm soát về doanh số, khách hàng, kho hàng và hướng dẫn hệ thống",
   },
 };

@@ -71,3 +71,7 @@ Desktop.ini
 tmp/
 temp/
 uploads/
+
+# Gemini File Search store id (runtime)
+backend/config/.gemini-file-search-store
+

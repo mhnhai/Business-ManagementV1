@@ -22,6 +22,7 @@ import EmployeeLocationRoutes from './EmployeeLocationRoutes';
 import rateLimiters from '@src/middlewares/rateLimitMiddleware';
 import BankAccountRoutes from './BankAccountRoutes';
 import BackupRoutes from './BackupRoutes';
+import AssistantRoutes from './AssistantRoutes';
 
 /******************************************************************************
                                 Setup
@@ -221,6 +222,27 @@ const backupRouter = Router();
 backupRouter.get(Paths.Backup.Export, rateLimiters.default, ...adminOnly, BackupRoutes.exportData);
 backupRouter.post(Paths.Backup.Restore, rateLimiters.default, ...adminOnly, BackupRoutes.restore);
 apiRouter.use(Paths.Backup._, backupRouter);
+
+const assistantRouter = Router();
+assistantRouter.post(
+  Paths.Assistant.Chat,
+  rateLimiters.assistant,
+  ...adminOnly,
+  AssistantRoutes.chat,
+);
+assistantRouter.get(
+  Paths.Assistant.Health,
+  rateLimiters.default,
+  ...adminOnly,
+  AssistantRoutes.health,
+);
+assistantRouter.post(
+  Paths.Assistant.KnowledgeSync,
+  rateLimiters.assistant,
+  ...adminOnly,
+  AssistantRoutes.knowledgeSync,
+);
+apiRouter.use(Paths.Assistant._, assistantRouter);
 
 /******************************************************************************
                                 Export

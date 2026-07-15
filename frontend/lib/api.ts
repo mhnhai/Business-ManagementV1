@@ -898,6 +898,37 @@ export const backupApi = {
     ),
 };
 
+export type AssistantChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type AssistantChatResponse = {
+  answer: string;
+  citations?: { title?: string; snippet?: string }[];
+  toolTrace?: string[];
+};
+
+export const assistantApi = {
+  chat: (messages: AssistantChatMessage[]) =>
+    request<AssistantChatResponse>("/assistant/chat", {
+      method: "POST",
+      body: JSON.stringify({ messages }),
+    }),
+  health: () =>
+    request<{
+      configured: boolean;
+      model: string;
+      fileSearchStore: string | null;
+      localKnowledgeFallback: boolean;
+    }>("/assistant/health"),
+  syncKnowledge: () =>
+    request<{ storeName: string; uploaded: string[] }>(
+      "/assistant/knowledge/sync",
+      { method: "POST", body: JSON.stringify({}) },
+    ),
+};
+
 export const lookupApi = {
   users: () => usersApi.getAll(),
   customers: () => customersApi.getAll(),
