@@ -4,9 +4,15 @@ import { Prisma } from '@prisma/client';
 import prisma from '@src/repos/common/prisma';
 
 import { isAllowedAssistantTool } from './assistantAllowlist';
+import {
+  VN_TZ,
+  formatVnDate,
+  formatVnDateTime,
+  parseDayEnd,
+  parseDayStart,
+} from './vnDate';
 
 const MAX_ROWS = 20;
-const VN_TZ = 'Asia/Ho_Chi_Minh';
 
 export const ASSISTANT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
   {
@@ -78,7 +84,7 @@ export const ASSISTANT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
   {
     name: 'list_recent_activities',
     description:
-      'Danh sách đơn/activity gần đây kèm trạng thái thanh toán và tổng hóa đơn.',
+      'Danh sách đơn/activity theo ngày hoặc gần đây. Khi admin hỏi "hôm nay", đặt date_from và date_to bằng ngày hệ thống (VN) trong system prompt.',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -89,6 +95,15 @@ export const ASSISTANT_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
         customer_id: {
           type: Type.NUMBER,
           description: 'Lọc theo khách hàng (tuỳ chọn)',
+        },
+        date_from: {
+          type: Type.STRING,
+          description:
+            'Ngày bắt đầu YYYY-MM-DD (VN). Hỏi "hôm nay" → dùng ngày hệ thống cho cả date_from và date_to.',
+        },
+        date_to: {
+          type: Type.STRING,
+          description: 'Ngày kết thúc YYYY-MM-DD (VN), inclusive',
         },
       },
     },
@@ -122,47 +137,6 @@ function clampLimit(n: unknown): number {
 function decimal(v: Prisma.Decimal | number | null | undefined): number {
   if (v == null) return 0;
   return Number(v);
-}
-
-/** Format for the model in Vietnam local time (avoids UTC date shift). */
-function formatVnDateTime(d: Date): string {
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: VN_TZ,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(d);
-}
-
-function formatVnDate(d: Date): string {
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: VN_TZ,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(d);
-}
-
-/** Start of calendar day in Vietnam → UTC instant. */
-function parseDayStart(dateStr: string): Date {
-  const d = new Date(`${dateStr}T00:00:00+07:00`);
-  if (Number.isNaN(d.getTime())) {
-    throw new Error(`Invalid date_from/date_to: ${dateStr}`);
-  }
-  return d;
-}
-
-/** End of calendar day in Vietnam → UTC instant. */
-function parseDayEnd(dateStr: string): Date {
-  const d = new Date(`${dateStr}T23:59:59.999+07:00`);
-  if (Number.isNaN(d.getTime())) {
-    throw new Error(`Invalid date_from/date_to: ${dateStr}`);
-  }
-  return d;
 }
 
 async function getSalesSummary(args: {
@@ -291,13 +265,28 @@ async function getProductStock(args: { query?: string }) {
 async function listRecentActivities(args: {
   limit?: number;
   customer_id?: number;
+  date_from?: string;
+  date_to?: string;
 }) {
   const take = clampLimit(args.limit);
+
+  const activityDate: { gte?: Date; lte?: Date } = {};
+  if (args.date_from?.trim()) {
+    activityDate.gte = parseDayStart(args.date_from.trim());
+  }
+  if (args.date_to?.trim()) {
+    activityDate.lte = parseDayEnd(args.date_to.trim());
+  }
+
   const rows = await prisma.activity.findMany({
-    where:
-      typeof args.customer_id === 'number'
+    where: {
+      ...(typeof args.customer_id === 'number'
         ? { customer_id: args.customer_id }
-        : undefined,
+        : {}),
+      ...(activityDate.gte || activityDate.lte
+        ? { activity_date: activityDate }
+        : {}),
+    },
     include: {
       customer: { select: { company_name: true } },
       invoice: { select: { total_amount: true } },
@@ -309,6 +298,9 @@ async function listRecentActivities(args: {
 
   return {
     timezone: VN_TZ,
+    date_from: args.date_from ?? null,
+    date_to: args.date_to ?? null,
+    count: rows.length,
     items: rows.map((a) => ({
       activity_id: a.activity_id,
       activity_date: formatVnDateTime(a.activity_date),
